@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#041c53">
+<title>کارت‌یار</title>
+<style>
+:root{
+  --navy-950:#031846;
+  --navy-900:#06225e;
+  --navy-800:#0b347b;
+  --blue-300:#9dc6ff;
+  --blue-100:#e4efff;
+  --ink:#111827;
+  --muted:#929aaa;
+  --surface:#fff;
+  --canvas:#eef1f5;
+  --row-shadow:0 7px 18px rgba(24,43,73,.13);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--canvas)}
+body{font-family:Tahoma,"Segoe UI",Arial,sans-serif;color:var(--ink);display:flex;justify-content:center}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{
+  position:relative;
+  width:min(100%,430px);
+  min-height:100dvh;
+  overflow:hidden;
+  background:var(--surface);
+}
+.hero{
+  position:relative;
+  height:365px;
+  padding:calc(14px + env(safe-area-inset-top)) 26px 24px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 48% 29%,rgba(22,71,152,.5),transparent 38%),
+    linear-gradient(150deg,#08296b 0%,#041d55 58%,#031845 100%);
+}
+.status{
+  direction:ltr;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:26px;
+  padding:0 2px;
+  font-size:15px;
+  font-weight:700;
+}
+.status-icons{display:flex;align-items:center;gap:7px}
+.status svg{display:block}
+.utility{
+  direction:ltr;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-top:27px;
+}
+.icon-button{
+  width:42px;height:42px;padding:8px;border:0;background:transparent;color:#fff;border-radius:50%;
+  display:grid;place-items:center;
+}
+.icon-button:hover,.icon-button:focus-visible{background:rgba(255,255,255,.1)}
+.brand{
+  position:absolute;
+  inset-inline:0;
+  top:75px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  pointer-events:none;
+}
+.brand-card{width:62px;height:47px;filter:drop-shadow(0 5px 8px rgba(0,0,0,.22));margin-bottom:8px}
+.brand h1{margin:0;font-size:36px;line-height:1.2;font-weight:500;letter-spacing:-1.8px}
+.search{
+  direction:ltr;
+  position:absolute;
+  right:26px;left:26px;top:195px;
+  height:58px;
+  display:flex;align-items:center;gap:10px;
+  border:1px solid rgba(160,190,238,.38);
+  border-radius:20px;
+  background:rgba(255,255,255,.075);
+  box-shadow:inset 0 1px rgba(255,255,255,.04);
+  padding:0 18px;
+}
+.search svg{flex:0 0 auto;color:#9eb4da}
+.search input{
+  direction:rtl;text-align:right;
+  width:100%;height:100%;padding:0;border:0;outline:0;background:transparent;color:#fff;
+  font-size:16px;
+}
+.search input::placeholder{color:#aab8d0;opacity:1}
+.search:focus-within{border-color:#a9c9ff;background:rgba(255,255,255,.11)}
+.stats{
+  direction:ltr;
+  position:absolute;
+  right:26px;left:26px;top:270px;
+  height:91px;
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  align-items:center;
+  border-radius:18px;
+  background:linear-gradient(110deg,rgba(42,91,170,.36),rgba(22,65,140,.31));
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+}
+.stat{
+  direction:rtl;
+  display:grid;
+  grid-template-columns:auto auto;
+  grid-template-areas:"icon number" "icon label";
+  align-items:center;justify-content:center;
+  column-gap:12px;
+}
+.stat-icon{
+  grid-area:icon;
+  width:48px;height:48px;border-radius:50%;
+  display:grid;place-items:center;
+  color:#0b367d;
+  background:linear-gradient(145deg,#aed2ff,#78aef7);
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.65),0 5px 11px rgba(0,18,63,.18);
+}
+.stat strong{grid-area:number;font-size:25px;line-height:1;font-weight:700}
+.stat span{grid-area:label;margin-top:5px;color:#c3cee1;font-size:14px}
+.stat-divider{height:56px;background:rgba(180,203,238,.35)}
+.sheet{
+  position:relative;
+  z-index:2;
+  min-height:calc(100dvh - 365px);
+  padding:18px 18px calc(91px + env(safe-area-inset-bottom));
+  background:#fff;
+  border-radius:8px 8px 0 0;
+}
+.people{display:grid;gap:9px}
+.person-row{
+  direction:ltr;
+  width:100%;height:68px;
+  display:flex;align-items:center;
+  gap:11px;
+  padding:8px 12px;
+  border:0;border-radius:15px;
+  background:#fff;color:var(--ink);
+  box-shadow:var(--row-shadow);
+  text-align:initial;
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.person-row:hover{box-shadow:0 8px 22px rgba(24,43,73,.17)}
+.person-row:active{transform:scale(.992)}
+.person-row:focus-visible{outline:3px solid #78aef7;outline-offset:2px}
+.chevron{
+  flex:0 0 22px;
+  width:22px;height:32px;
+  display:grid;place-items:center;
+  color:#8e97a5;
+}
+.bank-list{
+  direction:ltr;
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.bank-logo{
+  width:31px;height:31px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  color:#fff;
+  overflow:hidden;
+  box-shadow:0 3px 7px rgba(20,42,75,.2);
+}
+.bank-logo svg{width:23px;height:23px}
+.bank-logo.mellat{background:#ed2346}
+.bank-logo.melli{background:#071f6d}
+.bank-logo.saderat{background:#08a3c8}
+.bank-logo.more{background:#eef0f4;color:#505a69;font-size:11px;font-weight:700}
+.person-copy{
+  direction:rtl;
+  min-width:0;
+  flex:1;
+  text-align:right;
+  padding-right:3px;
+}
+.person-name{font-size:16.5px;line-height:1.45;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person-meta{font-size:13px;line-height:1.35;color:var(--muted);margin-top:1px}
+.avatar{
+  direction:rtl;
+  flex:0 0 50px;
+  width:50px;height:50px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  overflow:hidden;
+  color:#3d69b6;
+  background:linear-gradient(145deg,#edf4ff,#d7e7ff);
+}
+.avatar svg{width:40px;height:40px}
+.empty{
+  display:none;
+  padding:36px 16px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+.empty.show{display:block}
+.add-button{
+  position:fixed;
+  z-index:5;
+  bottom:calc(17px + env(safe-area-inset-bottom));
+  left:50%;
+  transform:translateX(-50%);
+  width:min(calc(100% - 44px),386px);
+  height:61px;
+  border:0;border-radius:19px;
+  display:flex;align-items:center;justify-content:center;gap:11px;
+  color:#fff;
+  background:linear-gradient(115deg,#0a347a,#041e59);
+  box-shadow:0 8px 18px rgba(5,37,91,.27);
+  font-size:18px;
+}
+.add-button svg{width:30px;height:30px}
+.add-button:focus-visible{outline:3px solid #8cbcff;outline-offset:3px}
+.toast{
+  position:fixed;z-index:9;
+  right:50%;bottom:92px;
+  transform:translate(50%,10px);
+  opacity:0;pointer-events:none;
+  padding:10px 15px;border-radius:11px;
+  background:#111827;color:#fff;
+  font-size:12px;
+  transition:.18s ease;
+}
+.toast.show{opacity:1;transform:translate(50%,0)}
+@media(min-width:700px){
+  body{padding:24px 0}
+  .app{min-height:860px;border-radius:38px;box-shadow:0 20px 75px rgba(18,33,55,.3)}
+  .sheet{min-height:495px}
+  .add-button{position:absolute}
+}
+@media(max-width:370px){
+  .hero{padding-inline:18px}.search,.stats{right:18px;left:18px}
+  .bank-list{gap:4px}.bank-logo{width:28px;height:28px}
+  .person-row{padding-inline:9px;gap:8px}.person-name{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.theme-symbol{font-size:27px;line-height:1}.app.dark{background:#0c1424;color:#e8eef9}.app.dark .hero{background:radial-gradient(circle at 48% 29%,rgba(34,80,159,.45),transparent 38%),linear-gradient(150deg,#071c45,#020c24 80%)}.app.dark .sheet{background:#0c1424}.app.dark .person-row{background:#16243a;color:#eef4ff;box-shadow:0 7px 18px rgba(0,0,0,.28)}.app.dark .person-meta{color:#a9b7cc}.app.dark .empty{color:#a9b7cc}.app.dark .stats{background:linear-gradient(110deg,rgba(40,86,160,.5),rgba(14,39,88,.52))}.app.dark .add-button{background:linear-gradient(115deg,#174b9b,#07275f)}.app.dark .toast{background:#f0f4fb;color:#13213b}.app.dark .search{background:rgba(255,255,255,.1);border-color:rgba(172,204,255,.45)}
+/* تنظیم ظریف لایت مود */
+.hero{height:390px;background:radial-gradient(circle at 48% 29%,rgba(49,103,185,.36),transparent 38%),linear-gradient(150deg,#164d98 0%,#123b7f 58%,#0d2e69 100%)}
+.sheet{min-height:calc(100dvh - 390px)}
+@media(min-width:700px){.sheet{min-height:470px}}
+.add-modal{position:fixed;z-index:20;inset:0;background:rgba(4,20,55,.48);display:flex;align-items:flex-end;justify-content:center}.add-modal[hidden]{display:none}.add-panel{width:min(100%,430px);max-height:88dvh;overflow:auto;padding:20px 20px calc(22px + env(safe-area-inset-bottom));background:#fff;border-radius:26px 26px 0 0;box-shadow:0 -8px 28px rgba(3,18,50,.25);direction:rtl}.add-modal .handle{width:44px;height:5px;background:#d9dfe8;border-radius:8px;margin:0 auto 16px}.add-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}.add-head h2{margin:0;font-size:20px;color:#172b58}.close-add{border:0;background:#edf1f6;color:#56627a;border-radius:50%;width:32px;height:32px;font-size:22px;line-height:1}.add-choices{display:grid;grid-template-columns:1fr 1fr;gap:11px}.add-choice{min-height:108px;border:1px solid #e1e7ef;background:#f8fbff;color:#172b58;border-radius:18px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}.choice-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:#e2efff;color:#1768d5;font-size:25px}.add-form{display:none}.add-form.active{display:block}.form-title{font-size:15px;font-weight:700;color:#172b58;margin:0 0 13px}.field{display:block;text-align:right;margin:10px 0}.field span{display:block;color:#68748a;font-size:11px;margin-bottom:6px}.field input,.field select{direction:rtl;text-align:right;width:100%;height:45px;border:1px solid #dbe2ec;border-radius:12px;background:#fbfcfe;padding:0 12px;color:#172033;outline:0}.form-actions{display:flex;gap:9px;margin-top:16px}.primary-add,.secondary-add{height:46px;border-radius:13px;font-weight:700}.primary-add{flex:1;border:0;background:#0a347a;color:#fff}.secondary-add{padding:0 16px;border:1px solid #dce3ec;background:#fff;color:#56627a}.secure-note{font-size:11px;line-height:1.7;color:#67748a;background:#f1f6fc;border-radius:12px;padding:9px 11px;margin-top:11px}.app.dark .add-panel{background:#121e32;color:#eaf1ff}.app.dark .add-head h2,.app.dark .form-title{color:#eaf1ff}.app.dark .add-choice{background:#182840;border-color:#2d4568;color:#eaf1ff}.app.dark .field input,.app.dark .field select{background:#0d1829;color:#eaf1ff;border-color:#304562}.app.dark .secure-note{background:#182840;color:#b9c9df}.add-panel{text-align:center}.add-head{position:relative;justify-content:center}.add-head h2,.form-title,.field,.field span,.field input,.field select{text-align:center}.close-add{position:absolute;left:0}.bank-field{position:relative}.bank-picker{position:absolute;z-index:3;top:76px;left:0;right:0;padding:10px;background:#fff;border:1px solid #dbe2ec;border-radius:14px;box-shadow:0 10px 22px rgba(20,42,75,.16)}.bank-picker[hidden]{display:none}.bank-picker>input{width:100%;height:40px;border:1px solid #dbe2ec;border-radius:10px;padding:0 10px;text-align:center;outline:0}.bank-options{max-height:210px;overflow:auto;margin-top:8px;display:grid;gap:6px}.bank-option{width:100%;min-height:42px;border:1px solid #e5eaf1;background:#fbfcfe;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;color:#172b58;text-align:center}.bank-option:hover,.bank-option:focus-visible{border-color:#1768d5;background:#eef6ff;outline:0}.bank-mark{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:#1768d5;color:#fff;font-size:10px;font-weight:700}.number-preview{display:block;min-height:18px;margin-top:5px;color:#1768d5;font-size:12px;direction:ltr;text-align:center;letter-spacing:1px}.app.dark .bank-picker{background:#121e32;border-color:#304562}.app.dark .bank-picker>input,.app.dark .bank-option{background:#0d1829;color:#eaf1ff;border-color:#304562}.app.dark .bank-option:hover{background:#182840}.secondary-add{color:#c62828;border-color:#f0b8b8;background:#fff}.bank-mark svg{width:21px;height:21px}.bank-option .bank-mark{color:#fff}.field.locked{opacity:.58}.field.locked input{background:#eef1f6;cursor:not-allowed;color:#7b8495}.field.locked span:after{content:' 🔒';font-size:12px}.app.dark .field.locked input{background:#0d1829;color:#8798b2}</style>
+</head>
+<body>
+<main class="app" aria-label="صفحه اصلی کارت‌یار">
+  <section class="hero">
+    <div class="status" aria-hidden="true">
+      <span>9:41</span>
+      <span class="status-icons">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="currentColor"><path d="M1 11h3v3H1zm5-4h3v7H6zm5-4h3v11h-3zm5-3h2v14h-2z"/></svg>
+        <svg width="18" height="14" viewBox="0 0 20 15" fill="currentColor"><path d="M1 5.3A14 14 0 0 1 19 5l-2.1 2.4a10.7 10.7 0 0 0-13.7.2L1 5.3Zm4.2 4.1a7.4 7.4 0 0 1 9.7-.2l-2.2 2.4a4.1 4.1 0 0 0-5.3.1L5.2 9.4ZM8.6 13a1.9 1.9 0 1 1 2.8 0l-1.4 1.4L8.6 13Z"/></svg>
+        <svg width="27" height="14" viewBox="0 0 27 14" fill="none"><rect x=".5" y=".5" width="23" height="13" rx="3" stroke="currentColor"/><rect x="24.5" y="4" width="2" height="6" rx="1" fill="currentColor"/><rect x="3" y="3" width="18" height="8" rx="1.5" fill="currentColor"/></svg>
+        <b>100%</b>
+      </span>
+    </div>
+
+    <div class="utility">
+      <button class="icon-button" id="notifications" aria-label="اعلان‌ها"><span class="theme-symbol">☾</span></button>
+      <button class="icon-button" id="menu" aria-label="منوی بیشتر">
+        <svg width="7" height="29" viewBox="0 0 7 29" fill="currentColor"><circle cx="3.5" cy="3.5" r="3"/><circle cx="3.5" cy="14.5" r="3"/><circle cx="3.5" cy="25.5" r="3"/></svg>
+      </button>
+    </div>
+
+    <div class="brand">
+      <svg class="brand-card" viewBox="0 0 68 52" aria-hidden="true">
+        <g transform="rotate(-7 34 26)">
+          <rect x="3" y="5" width="62" height="42" rx="7" fill="#fff"/>
+          <rect x="3" y="14" width="62" height="8" fill="#dbe5f3"/>
+          <rect x="14" y="29" width="16" height="12" rx="2" fill="#0c347d"/>
+          <path d="M45 30h12M45 37h12" stroke="#2d62ae" stroke-width="3"/>
+        </g>
+      </svg>
+      <h1>کارت‌یار</h1>
+    </div>
+
+    <label class="search">
+      <input id="search" type="search" autocomplete="off" placeholder="جستجوی نام، شماره کارت یا شبا" aria-label="جستجو">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="13" cy="13" r="9"/><path d="m20 20 7 7"/></svg>
+    </label>
+
+    <div class="stats" aria-label="آمار کارت‌یار">
+      <div class="stat">
+        <div class="stat-icon">
+          <svg width="27" height="23" viewBox="0 0 27 23" fill="currentColor"><circle cx="9" cy="7" r="4"/><circle cx="19" cy="8" r="3.5"/><path d="M1 21v-3.5C1 13.9 4.6 11 9 11s8 2.9 8 6.5V21H1Zm15.5 0v-3.2c0-2.2-.8-4.2-2.3-5.7 1.4-.8 3-1.2 4.8-1.2 4.1 0 7 2.6 7 6V21h-9.5Z"/></svg>
+        </div>
+        <strong>۱۲</strong><span>مخاطب</span>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="stat-icon">
+          <svg width="27" height="22" viewBox="0 0 27 22" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="23" height="17" rx="3"/><path d="M2 8h23M7 14h6"/></svg>
+        </div>
+        <strong>۲۸</strong><span>کارت</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <div class="people" id="people"></div>
+    <div class="empty" id="empty">مخاطبی با این مشخصات پیدا نشد.</div>
+  </section>
+
+  <button class="add-button" id="add" aria-label="افزودن شخص یا کارت">
+    <svg viewBox="0 0 30 30" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 3v24M3 15h24"/></svg>
+    <span>افزودن شخص یا کارت</span>
+  </button>
+  <div class="add-modal" id="addModal" hidden><div class="add-panel" role="dialog" aria-modal="true" aria-labelledby="addTitle"><div class="handle"></div><div class="add-head"><h2 id="addTitle">افزودن شخص و کارت</h2><button class="close-add" id="closeAdd" aria-label="بستن">×</button></div><form class="add-form active" id="combinedForm"><p class="form-title">اطلاعات شخص و کارت را وارد کنید</p><label class="field"><span>نام و نام خانوادگی / نام شرکت</span><input required placeholder="مثلاً علی رضایی"></label><label class="field bank-field"><span>بانک</span><input id="bankInput" required readonly placeholder="انتخاب بانک"><div class="bank-picker" id="bankPicker" hidden><input id="bankSearch" placeholder="جست‌وجوی نام بانک"><div id="bankOptions"></div></div></label><label class="field"><span>شماره کارت</span><input required inputmode="numeric" id="cardNumberInput" inputmode="numeric" placeholder="۱۶ رقم شماره کارت" maxlength="16"></label><label class="field"><span>شماره حساب</span><input id="accountInput" required inputmode="numeric" placeholder="شماره حساب"></label><label class="field"><span>شماره شبا</span><input id="ibanInput" required dir="ltr" inputmode="text" placeholder="شماره شبا"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label class="field"><span>CVV2 <small>(اختیاری)</small></span><input id="cvvInput" inputmode="numeric" placeholder="خالی"></label><label class="field"><span>تاریخ انقضا <small>(اختیاری)</small></span><input id="expiryInput" inputmode="numeric" placeholder="خالی"></label></div><label class="field"><span>نوع کارت</span><select id="cardTypeSelect"><option value="customer" selected>مشتری</option><option value="personal">شخصی</option></select></label><div class="secure-note">CVV2 و تاریخ انقضا می‌توانند خالی بمانند. این دو مورد فقط به‌صورت رمزنگاری‌شده در دستگاه نگهداری می‌شوند و در ارسال یا خروجی قرار نمی‌گیرند.</div><div class="form-actions"><button class="secondary-add" id="cancelAdd" type="button">انصراف</button><button class="primary-add" type="submit">ذخیره</button></div></form></div></div><div class="toast" id="toast" role="status" aria-live="polite"></div>
+</main>
+
+<script>
+const PEOPLE=[
+  {name:'علی رضایی',meta:'۳ کارت',kind:'man',banks:['mellat','melli','saderat']},
+  {name:'مریم احمدی',meta:'۲ کارت',kind:'woman',banks:['mellat','melli']},
+  {name:'حسین محمدی',meta:'۱ کارت',kind:'man',banks:['melli']},
+  {name:'فروشگاه آفتاب',meta:'۳ کارت',kind:'store',banks:['mellat','melli','saderat']},
+  {name:'شرکت پارس‌گستر',meta:'+۲',kind:'company',banks:['mellat','melli','saderat','more']},
+  {name:'سمیرا نوری',meta:'۱ کارت',kind:'woman',banks:['saderat']},
+  {name:'امین کریمی',meta:'۲ کارت',kind:'man',banks:['mellat','saderat']}
+];
+const $=s=>document.querySelector(s);
+const bankLogo=type=>{
+  if(type==='more') return '<span class="bank-logo more">+۲</span>';
+  if(type==='mellat') return '<span class="bank-logo mellat" title="بانک ملت"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 7v8l-7 4-7-4V7l7-4Z" stroke="white" stroke-width="2"/><circle cx="12" cy="11" r="3" fill="#ffd54a"/></svg></span>';
+  if(type==='melli') return '<span class="bank-logo melli" title="بانک ملی"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="white" stroke-width="1.5"/><path d="M8 15c2-2 2-6 4-9 2 3 2 7 4 9M7 17h10" stroke="white" stroke-width="1.4"/></svg></span>';
+  return '<span class="bank-logo saderat" title="بانک صادرات"><svg viewBox="0 0 24 24" fill="none"><path d="M6 5v14M18 5v14M6 10h12M9 5v5M15 10v9" stroke="white" stroke-width="2.7"/></svg></span>';
+};
+const avatar=kind=>{
+  if(kind==='store') return '<svg viewBox="0 0 48 48" fill="none"><path d="M9 19h30v22H9V19Z" fill="#4d78bd"/><path d="M7 19h34l-4-10H11L7 19Z" fill="#7199d7"/><path d="M11 19c0 4 6 4 6 0 0 4 7 4 7 0 0 4 7 4 7 0 0 4 6 4 6 0" stroke="#dce9ff" stroke-width="3"/><rect x="19" y="28" width="10" height="13" fill="#dce9ff"/></svg>';
+  if(kind==='company') return '<svg viewBox="0 0 48 48" fill="none"><path d="M10 41V12h17v29M27 21h11v20" fill="#4d78bd"/><path d="M15 18h5M15 25h5M15 32h5M31 27h4M31 33h4" stroke="#dce9ff" stroke-width="2.7"/></svg>';
+  const female=kind==='woman';
+  return '<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="17" r="9" fill="#4d78bd"/><path d="M8 44c1-11 7-16 16-16s15 5 16 16H8Z" fill="#4d78bd"/>'+(female?'<path d="M14 17c0-8 4-12 10-12s10 4 10 12c-3-2-5-5-6-8-3 4-8 6-14 8Z" fill="#315b9f"/>':'<path d="M15 13c1-6 5-9 10-9 4 0 8 3 9 8-6-1-12-1-19 1Z" fill="#315b9f"/>')+'</svg>';
+};
+function render(query=''){
+  const q=query.trim();
+  const rows=PEOPLE.filter(p=>p.name.includes(q)).map((p,i)=>`
+    <button class="person-row" data-index="${i}" aria-label="مشاهده کارت‌های ${p.name}">
+      <span class="chevron"><svg width="13" height="23" viewBox="0 0 13 23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m10.5 2-8 9.5 8 9.5"/></svg></span>
+      <span class="bank-list">${p.banks.map(bankLogo).join('')}</span>
+      <span class="person-copy"><span class="person-name">${p.name}</span><span class="person-meta">${p.meta}</span></span>
+      <span class="avatar">${avatar(p.kind)}</span>
+    </button>`).join('');
+  $('#people').innerHTML=rows;
+  $('#empty').classList.toggle('show',!rows);
+}
+function showToast(text){const t=$('#toast');t.textContent=text;t.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.classList.remove('show'),1500)}
+$('#search').addEventListener('input',e=>render(e.target.value));
+$('#people').addEventListener('click',e=>{const row=e.target.closest('.person-row');if(row){const p=PEOPLE[Number(row.dataset.index)];location.href='person-cards.html?name='+encodeURIComponent(p.name)+'&kind='+encodeURIComponent(p.kind)}});
+$('#add').addEventListener('click',()=>showToast('افزودن شخص یا کارت'));
+$('#notifications').addEventListener('click',()=>{const app=document.querySelector('.app');const dark=app.classList.toggle('dark');const b=document.querySelector('#notifications');b.textContent=dark?'☀':'☾';b.classList.add('theme-symbol');showToast(dark?'حالت تاریک فعال شد':'حالت روشن فعال شد')});
+$('#menu').addEventListener('click',()=>showToast('منوی کارت‌یار'));
+render();
+const addModal=document.querySelector('#addModal');function openAdd(){addModal.hidden=false}function closeAdd(){addModal.hidden=true}document.querySelector('#add').onclick=openAdd;document.querySelector('#closeAdd').onclick=closeAdd;document.querySelector('#cancelAdd').onclick=closeAdd;document.querySelector('#combinedForm').onsubmit=e=>{e.preventDefault();closeAdd();showToast('شخص و کارت برای ثبت آماده شد')};addModal.onclick=e=>{if(e.target===addModal)closeAdd()};const BANKS=['بانک ملی','بانک کشاورزی','بانک ملت','بانک سپه','بانک صادرات','بانک مهر ایران','بانک تجارت','بانک رفاه','بانک مسکن','بانک پاسارگاد','بانک پارسیان','بانک سامان','بانک اقتصاد نوین','بانک شهر','بانک دی','بانک سینا','بانک کارآفرین','بانک سرمایه','بانک گردشگری','بانک ایران زمین','بانک خاورمیانه','بانک توسعه صادرات','بانک توسعه تعاون','پست بانک','بانک صنعت و معدن','بانک قرض‌الحسنه رسالت'];const bankInput=document.querySelector('#bankInput'),bankPicker=document.querySelector('#bankPicker'),bankSearch=document.querySelector('#bankSearch'),bankOptions=document.createElement('div');bankOptions.className='bank-options';document.querySelector('#bankPicker').appendChild(bankOptions);function bankLogoSvg(name){const logos={'بانک ملی':'<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18c3-4 3-8 6-12 3 4 3 8 6 12M7 21h14" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>','بانک کشاورزی':'<svg viewBox="0 0 28 28"><path d="M14 24V10M14 13c-5-1-8-4-8-8 5 0 8 3 8 8ZM14 17c5-1 8-4 8-8-5 0-8 3-8 8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>','بانک ملت':'<svg viewBox="0 0 28 28"><path d="M14 3 23 8v10l-9 5-9-5V8l9-5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="14" cy="13" r="3" fill="currentColor"/></svg>','بانک سپه':'<svg viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="m14 7 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="currentColor"/></svg>','بانک صادرات':'<svg viewBox="0 0 28 28"><path d="M7 5v18M21 5v18M7 11h14M11 5v6M17 11v12" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>','بانک مهر ایران':'<svg viewBox="0 0 28 28"><path d="M5 17c3-8 7-8 9 0 2 8 6 8 9 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="9" r="2" fill="currentColor"/><circle cx="20" cy="9" r="2" fill="currentColor"/></svg>'};return logos[name]||'<svg viewBox="0 0 28 28"><rect x="5" y="5" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 14h10M14 9v10" stroke="currentColor" stroke-width="2"/></svg>'};function renderBanks(q=''){const list=BANKS.filter(x=>x.includes(q));bankOptions.innerHTML=list.map((name,i)=>'<button type="button" class="bank-option" data-bank="'+name+'"><span class="bank-mark">'+name.replace('بانک ','').replace('مؤسسه اعتباری ','').slice(0,2)+'</span><span>'+name+'</span></button>').join('')||'<small>بانکی پیدا نشد</small>'}bankInput.onclick=()=>{bankPicker.hidden=false;renderBanks();bankSearch.focus()};bankSearch.oninput=e=>renderBanks(e.target.value);bankOptions.onclick=e=>{const item=e.target.closest('.bank-option');if(item){bankInput.value=item.dataset.bank;bankPicker.hidden=true}};document.addEventListener('click',e=>{if(!e.target.closest('.bank-field'))bankPicker.hidden=true});const cardInput=document.querySelector('#cardNumberInput');const preview=document.createElement('small');preview.className='number-preview';cardInput.insertAdjacentElement('afterend',preview);cardInput.addEventListener('input',e=>{const raw=e.target.value.replace(/\\D/g,'').slice(0,16);e.target.value=raw;preview.textContent=raw.length===16?raw.match(/.{1,4}/g).join(' - '):''});const cardTypeSelect=document.querySelector('#cardTypeSelect'),cvvInput=document.querySelector('#cvvInput'),expiryInput=document.querySelector('#expiryInput'),cvvField=cvvInput.closest('.field'),expiryField=expiryInput.closest('.field');function syncSensitiveFields(){const locked=cardTypeSelect.value==='customer';[cvvInput,expiryInput].forEach(input=>{input.disabled=locked;if(locked){input.value='';input.placeholder='قفل شده'}else input.placeholder='خالی'});[cvvField,expiryField].forEach(field=>field.classList.toggle('locked',locked))}cardTypeSelect.addEventListener('change',syncSensitiveFields);syncSensitiveFields();const ibanInput=document.querySelector('#ibanInput');ibanInput.maxLength=26;ibanInput.addEventListener('input',e=>{let v=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(!v.startsWith('IR'))v='IR'+v.replace(/^IR/,'');e.target.value=v.slice(0,26)});document.querySelector('#accountInput').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\\D/g,'')});</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
