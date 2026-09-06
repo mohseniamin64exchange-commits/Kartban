@@ -54,6 +54,7 @@ fun RealisticBankCard(
     onToggleSelect: (Boolean) -> Unit,
     onCopyIban: (String) -> Unit,
     onCopyCardNumber: (String) -> Unit,
+    onCopyAccountNumber: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val meta = remember(card.bankType, card.bankName) {
@@ -63,7 +64,7 @@ fun RealisticBankCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(1.586f)
+            .aspectRatio(1.45f)
             .shadow(
                 elevation = if (isSelected) 14.dp else 8.dp,
                 shape = RoundedCornerShape(20.dp)
@@ -85,7 +86,7 @@ fun RealisticBankCard(
                         colors = listOf(meta.colorStart, meta.colorEnd)
                     )
                 )
-                .padding(18.dp)
+                .padding(16.dp)
         ) {
             // Background subtle circles overlay
             Box(
@@ -152,7 +153,7 @@ fun RealisticBankCard(
                     )
                 }
 
-                // Middle Section: Metallic Chip & Contactless
+                // Middle Section: Metallic Chip & Card Kind
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -161,7 +162,7 @@ fun RealisticBankCard(
                     // Smart Chip Graphic
                     Box(
                         modifier = Modifier
-                            .size(width = 42.dp, height = 30.dp)
+                            .size(width = 38.dp, height = 26.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(
                                 brush = Brush.linearGradient(
@@ -186,94 +187,142 @@ fun RealisticBankCard(
                     }
                 }
 
-                // Card Number Center Display (Clickable to copy)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.18f))
-                        .clickable { onCopyCardNumber(card.cardNumber) }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = IranianBankHelper.formatCardNumber(card.cardNumber),
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                        letterSpacing = 1.2.sp,
-                        style = TextStyle(textDirection = TextDirection.Ltr)
-                    )
-
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy Card Number",
-                        tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-
-                // Bottom Section: Person Name, Account, IBAN & Copy Button
-                Row(
+                // Stacked Numbers Section (Card Number, Account Number, IBAN)
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    // Person / Owner Name & Account Number
-                    Column(modifier = Modifier.weight(1f)) {
+                    // 1. Card Number Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.Black.copy(alpha = 0.22f))
+                            .clickable { onCopyCardNumber(card.cardNumber) }
+                            .padding(horizontal = 10.dp, vertical = 5.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = personName,
+                            text = IranianBankHelper.formatCardNumber(card.cardNumber),
                             color = Color.White,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.1.sp,
+                            style = TextStyle(textDirection = TextDirection.Ltr)
                         )
-                        if (card.accountNumber.isNotBlank()) {
-                            Text(
-                                text = "حساب: ${card.accountNumber}",
-                                color = Color.White.copy(alpha = 0.85f),
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                        if (card.iban.isNotBlank()) {
-                            Text(
-                                text = IranianBankHelper.formatIban(card.iban),
-                                color = Color.White.copy(alpha = 0.85f),
-                                fontSize = 10.sp,
-                                fontFamily = FontFamily.Monospace,
-                                style = TextStyle(textDirection = TextDirection.Ltr)
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("کارت", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Card Number",
+                                tint = Color.White.copy(alpha = 0.85f),
+                                modifier = Modifier.size(13.dp)
                             )
                         }
                     }
 
-                    // Copy IBAN Button
-                    if (card.iban.isNotBlank()) {
-                        Surface(
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.clickable { onCopyIban(card.iban) }
+                    // 2. Account Number Row
+                    if (card.accountNumber.isNotBlank()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.Black.copy(alpha = 0.22f))
+                                .clickable {
+                                    if (onCopyAccountNumber != null) {
+                                        onCopyAccountNumber(card.accountNumber)
+                                    } else {
+                                        onCopyCardNumber(card.accountNumber)
+                                    }
+                                }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Text(
+                                text = card.accountNumber,
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = FontFamily.Monospace,
+                                style = TextStyle(textDirection = TextDirection.Ltr)
+                            )
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("حساب", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "کپی شبا",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Medium
+                                    contentDescription = "Copy Account Number",
+                                    tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(13.dp)
                                 )
                             }
                         }
+                    }
+
+                    // 3. IBAN / Sheba Row
+                    if (card.iban.isNotBlank()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.Black.copy(alpha = 0.22f))
+                                .clickable { onCopyIban(card.iban) }
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = IranianBankHelper.formatIban(card.iban),
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                fontFamily = FontFamily.Monospace,
+                                style = TextStyle(textDirection = TextDirection.Ltr)
+                            )
+
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("شبا", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy IBAN",
+                                    tint = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Bottom Section: Person Name & Expiry/CVV2 if personal
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = personName,
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    if (card.cardKind == "personal" && (card.cvv2.isNotBlank() || card.expiryDate.isNotBlank())) {
+                        Text(
+                            text = listOfNotNull(
+                                if (card.cvv2.isNotBlank()) "CVV2: ${card.cvv2}" else null,
+                                if (card.expiryDate.isNotBlank()) "Exp: ${card.expiryDate}" else null
+                            ).joinToString(" | "),
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
                     }
                 }
             }

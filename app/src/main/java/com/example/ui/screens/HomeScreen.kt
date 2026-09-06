@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -104,13 +105,26 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column {
-                    // Top Bar: Brand Title (Right) & Theme Toggle (Left)
-                    Row(
+                    // Top Bar: Settings (Right), Centered Title, Theme Toggle (Left)
+                    Box(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Right: Title & Brand Icon
+                        // Right Side (CenterStart in RTL): Settings Button
+                        IconButton(
+                            onClick = { /* Settings action for future */ },
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .testTag("settings_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "تنظیمات",
+                                tint = Color.White
+                            )
+                        }
+
+                        // Center: Title & Brand Icon
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.CreditCard,
@@ -127,14 +141,16 @@ fun HomeScreen(
                             )
                         }
 
-                        // Left: Theme Toggle Button
+                        // Left Side (CenterEnd in RTL): Theme Toggle Button
                         IconButton(
                             onClick = { viewModel.toggleDarkMode() },
-                            modifier = Modifier.testTag("dark_mode_toggle")
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .testTag("dark_mode_toggle")
                         ) {
                             Icon(
                                 imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                contentDescription = "Toggle Theme",
+                                contentDescription = "تغییر حالت شب و روز",
                                 tint = Color.White
                             )
                         }

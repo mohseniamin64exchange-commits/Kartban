@@ -18,11 +18,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -158,9 +164,17 @@ fun AddPersonAndCardDialog(
                 }
             }
 
+            val navyFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF164D98),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                focusedContainerColor = Color(0xFF164D98).copy(alpha = 0.04f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                focusedLabelColor = Color(0xFF164D98)
+            )
+
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // 1. Person Name Input
                 item {
@@ -169,6 +183,9 @@ fun AddPersonAndCardDialog(
                         onValueChange = { personName = it },
                         label = { Text("نام و نام خانوادگی / نام شرکت") },
                         placeholder = { Text("مثلاً علی رضایی یا فروشگاه آفتاب") },
+                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("add_person_name_input"),
@@ -176,7 +193,7 @@ fun AddPersonAndCardDialog(
                     )
                 }
 
-                // 2. Person Kind Selection (Man, Woman, Store, Company)
+                // 2. Person Kind Selection Chips (Man, Woman, Store, Company)
                 item {
                     Text(
                         text = "نوع مخاطب:",
@@ -184,25 +201,43 @@ fun AddPersonAndCardDialog(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         listOf(
-                            "man" to "مرد 👨",
-                            "woman" to "زن 👩",
-                            "store" to "فروشگاه 🏪",
-                            "company" to "شرکت 🏢"
-                        ).forEach { (key, label) ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { personKind = key }
+                            "man" to ("مرد" to "👨"),
+                            "woman" to ("زن" to "👩"),
+                            "store" to ("فروشگاه" to "🏪"),
+                            "company" to ("شرکت" to "🏢")
+                        ).forEach { (key, pair) ->
+                            val isSelected = personKind == key
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) Color(0xFF164D98) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) Color(0xFF164D98) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                                ),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { personKind = key }
                             ) {
-                                RadioButton(
-                                    selected = personKind == key,
-                                    onClick = { personKind = key }
-                                )
-                                Text(text = label, fontSize = 11.sp)
+                                Row(
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = pair.second, fontSize = 13.sp)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = pair.first,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
@@ -216,11 +251,18 @@ fun AddPersonAndCardDialog(
                             onValueChange = {},
                             readOnly = true,
                             label = { Text("انتخاب بانک") },
-                            trailingIcon = {
-                                IconButton(onClick = { bankDropdownExpanded = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Bank")
+                            leadingIcon = {
+                                Box(modifier = Modifier.padding(start = 8.dp)) {
+                                    RectangularBankLogo(bankTypeKey = selectedBank.typeKey)
                                 }
                             },
+                            trailingIcon = {
+                                IconButton(onClick = { bankDropdownExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Select Bank", tint = Color(0xFF164D98))
+                                }
+                            },
+                            colors = navyFieldColors,
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { bankDropdownExpanded = true },
@@ -261,6 +303,9 @@ fun AddPersonAndCardDialog(
                         },
                         label = { Text("شماره ۱۶ رقمی کارت") },
                         placeholder = { Text("۶۱۰۴ ۳۳۷۸ ۹۰۱۲ ۳۴۵۶") },
+                        leadingIcon = { Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -276,6 +321,9 @@ fun AddPersonAndCardDialog(
                         onValueChange = { accountNumber = it.filter { ch -> ch.isDigit() } },
                         label = { Text("شماره حساب") },
                         placeholder = { Text("۱۲۳۴۵۶۷۸۹") },
+                        leadingIcon = { Icon(Icons.Default.AccountBalance, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
@@ -295,12 +343,15 @@ fun AddPersonAndCardDialog(
                         },
                         label = { Text("شماره شبا (IBAN)") },
                         placeholder = { Text("IR120170000000123456789001") },
+                        leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
                 }
 
-                // 7. Card Type: "مشتری / مخاطب" vs "کارت شخصی"
+                // 7. Card Type Cards ("مشتری / مخاطب" vs "کارت شخصی")
                 item {
                     Text(
                         text = "نوع کارت:",
@@ -308,38 +359,93 @@ fun AddPersonAndCardDialog(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable {
-                                cardKind = "customer"
-                                cvv2 = ""
-                                expiryDate = ""
-                            }
-                        ) {
-                            RadioButton(
-                                selected = cardKind == "customer",
-                                onClick = {
+                        // Customer Card Choice
+                        val isCustomer = cardKind == "customer"
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isCustomer) Color(0xFF0F3875).copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(
+                                width = if (isCustomer) 2.dp else 1.dp,
+                                color = if (isCustomer) Color(0xFF164D98) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
                                     cardKind = "customer"
                                     cvv2 = ""
                                     expiryDate = ""
                                 }
-                            )
-                            Text(text = "کارت مشتری / مخاطب (پیش‌فرض)", fontSize = 12.sp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.People,
+                                    contentDescription = null,
+                                    tint = if (isCustomer) Color(0xFF164D98) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "کارت مخاطب",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isCustomer) Color(0xFF164D98) else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "اشتراک سریع",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { cardKind = "personal" }
+                        // Personal Card Choice
+                        val isPersonal = cardKind == "personal"
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isPersonal) Color(0xFF07815D).copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = BorderStroke(
+                                width = if (isPersonal) 2.dp else 1.dp,
+                                color = if (isPersonal) Color(0xFF07815D) else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { cardKind = "personal" }
                         ) {
-                            RadioButton(
-                                selected = cardKind == "personal",
-                                onClick = { cardKind = "personal" }
-                            )
-                            Text(text = "کارت شخصی خودم 🔒", fontSize = 12.sp)
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = if (isPersonal) Color(0xFF07815D) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "کارت شخصی",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isPersonal) Color(0xFF07815D) else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "ذخیره CVV2",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -358,11 +464,15 @@ fun AddPersonAndCardDialog(
                             enabled = isPersonal,
                             label = { Text("CVV2") },
                             placeholder = { Text(if (isPersonal) "۳ یا ۴ رقم" else "قفل شده 🔒") },
-                            trailingIcon = {
-                                if (!isPersonal) {
-                                    Icon(Icons.Default.Lock, contentDescription = "Locked")
-                                }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = if (isPersonal) Color(0xFF07815D) else Color.Gray
+                                )
                             },
+                            colors = navyFieldColors,
+                            shape = RoundedCornerShape(14.dp),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             singleLine = true
@@ -374,11 +484,15 @@ fun AddPersonAndCardDialog(
                             enabled = isPersonal,
                             label = { Text("تاریخ انقضا") },
                             placeholder = { Text(if (isPersonal) "05/08" else "قفل شده 🔒") },
-                            trailingIcon = {
-                                if (!isPersonal) {
-                                    Icon(Icons.Default.Lock, contentDescription = "Locked")
-                                }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = if (isPersonal) Color(0xFF07815D) else Color.Gray
+                                )
                             },
+                            colors = navyFieldColors,
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.weight(1f),
                             singleLine = true
                         )
@@ -388,17 +502,29 @@ fun AddPersonAndCardDialog(
                 // 9. Privacy Policy Notice
                 item {
                     Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF164D98).copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFF164D98).copy(alpha = 0.2f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "🛡️ اطلاعیه امنیت: CVV2 و تاریخ انقضا فقط برای کارت شخصی قابل ورود هستند و هرگز در ارسال پیامک، تصویر اشتراکی یا خروجی قرار نمی‌گیرند.",
-                            fontSize = 11.sp,
-                            lineHeight = 16.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(10.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = null,
+                                tint = Color(0xFF164D98),
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "اطلاعیه امنیت: CVV2 و تاریخ انقضا فقط برای کارت شخصی قابل ورود هستند و هرگز در ارسال پیامک یا تصویر قرار نمی‌گیرند.",
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
 

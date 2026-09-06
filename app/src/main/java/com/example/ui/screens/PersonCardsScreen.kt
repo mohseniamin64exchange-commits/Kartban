@@ -240,6 +240,9 @@ fun PersonCardsScreen(
                             },
                             onCopyCardNumber = { cardNumber ->
                                 viewModel.copyToClipboard("Card Number", cardNumber, "شماره کارت کپی شد")
+                            },
+                            onCopyAccountNumber = { accNumber ->
+                                viewModel.copyToClipboard("Account Number", accNumber, "شماره حساب کپی شد")
                             }
                         )
                     }
