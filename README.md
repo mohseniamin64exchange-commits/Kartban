@@ -1,11 +1,31 @@
-<div align="center">
+# اجرای کارت‌یار در Google AI Studio
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+این مخزن دو بخش دارد:
 
-  <h1>Built with AI Studio</h2>
+- `app/`: برنامه اصلی Android با Flutter؛ مرجع نهایی منطق، امنیت و APK.
+- `index.html` و `person-cards.html`: همزاد طراحی وب برای پیش‌نمایش و ویرایش سریع در Google AI Studio.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## ورود به AI Studio
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+1. وارد **Google AI Studio → Build** شوید.
+2. از علامت **+** کنار کادر پیام، **Import from GitHub** را انتخاب کنید.
+3. مخزن `mohseniamin64exchange-commits/kartyar` را انتخاب کنید.
+4. پلتفرم را روی **Web app** نگه دارید.
+5. پس از باز شدن پیش‌نمایش، متن `AI_STUDIO_PROMPT.md` را به عامل بدهید.
+6. تغییرات را از **Settings → GitHub** روی همین مخزن Push کنید.
+7. اینجا تغییرات را Pull می‌کنیم و طراحی تأییدشده را به Flutter منتقل می‌کنیم.
 
-</div>
+> Google AI Studio پروژه Flutter را مستقیماً اجرا نمی‌کند. نسخه وب فقط محیط طراحی است و نباید قواعد امنیتی برنامه Android را تغییر دهد.
+
+## اجرای محلی نسخه طراحی
+
+```
+npm install
+npm run dev
+```
+
+برای کنترل خروجی:
+
+```
+npm run build
+```

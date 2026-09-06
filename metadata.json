@@ -1,0 +1,6 @@
+{
+  "name": "کارت‌یار",
+  "description": "مدیریت و ذخیره هوشمند کارت‌های بانکی مخاطبان، مشتریان و کارت‌های شخصی با امکان ارسال سریع شبا و کارت",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
