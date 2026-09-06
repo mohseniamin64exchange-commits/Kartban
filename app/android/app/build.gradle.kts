@@ -7,9 +7,7 @@ plugins {
 android {
     namespace = "com.kartyar.kartyar"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
-
-    compileOptions {
+compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -43,3 +41,4 @@ kotlin {
 flutter {
     source = "../.."
 }
+
