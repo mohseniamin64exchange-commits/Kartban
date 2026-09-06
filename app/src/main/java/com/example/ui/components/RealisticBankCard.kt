@@ -41,6 +41,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BankCardEntity
@@ -86,19 +89,65 @@ fun RealisticBankCard(
                         colors = listOf(meta.colorStart, meta.colorEnd)
                     )
                 )
-                .padding(16.dp)
         ) {
-            // Background subtle circles overlay
-            Box(
-                modifier = Modifier
-                    .size(180.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f))
-                    .align(Alignment.TopStart)
-            )
+            // PSD Layer 1: Open-Layer Geometric Wave & Accent Curves Canvas
+            val accentColor = meta.accentColor
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+
+                // Diagonal PSD wave ribbon 1
+                val path1 = Path().apply {
+                    moveTo(width * 0.15f, 0f)
+                    cubicTo(width * 0.4f, height * 0.35f, width * 0.65f, height * 0.1f, width, height * 0.45f)
+                    lineTo(width, 0f)
+                    close()
+                }
+                drawPath(
+                    path = path1,
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.08f),
+                            accentColor.copy(alpha = 0.22f),
+                            Color.White.copy(alpha = 0.02f)
+                        )
+                    )
+                )
+
+                // Diagonal PSD wave ribbon 2
+                val path2 = Path().apply {
+                    moveTo(0f, height * 0.45f)
+                    cubicTo(width * 0.3f, height * 0.82f, width * 0.7f, height * 0.42f, width, height * 0.88f)
+                    lineTo(width, height)
+                    lineTo(0f, height)
+                    close()
+                }
+                drawPath(
+                    path = path2,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.15f),
+                            accentColor.copy(alpha = 0.18f)
+                        )
+                    )
+                )
+
+                // Subtle PSD Guilloche security line
+                val path3 = Path().apply {
+                    moveTo(0f, height * 0.25f)
+                    cubicTo(width * 0.5f, height * 0.15f, width * 0.5f, height * 0.65f, width, height * 0.55f)
+                }
+                drawPath(
+                    path = path3,
+                    color = Color.White.copy(alpha = 0.08f),
+                    style = Stroke(width = 2f)
+                )
+            }
 
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 // Top Header: Checkbox & Bank Name / Emblem
@@ -197,7 +246,7 @@ fun RealisticBankCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color.Black.copy(alpha = 0.22f))
+                            .background(Color.Black.copy(alpha = 0.28f))
                             .clickable { onCopyCardNumber(card.cardNumber) }
                             .padding(horizontal = 10.dp, vertical = 5.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -206,20 +255,20 @@ fun RealisticBankCard(
                         Text(
                             text = IranianBankHelper.formatCardNumber(card.cardNumber),
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             fontFamily = FontFamily.Monospace,
-                            letterSpacing = 1.1.sp,
+                            letterSpacing = 1.3.sp,
                             style = TextStyle(textDirection = TextDirection.Ltr)
                         )
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("کارت", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                            Text("شماره کارت", color = Color.White.copy(alpha = 0.75f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = Icons.Default.ContentCopy,
                                 contentDescription = "Copy Card Number",
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = Color.White.copy(alpha = 0.9f),
                                 modifier = Modifier.size(13.dp)
                             )
                         }
@@ -247,13 +296,13 @@ fun RealisticBankCard(
                                 text = card.accountNumber,
                                 color = Color.White,
                                 fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
                                 style = TextStyle(textDirection = TextDirection.Ltr)
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("حساب", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                                Text("شماره حساب", color = Color.White.copy(alpha = 0.75f), fontSize = 10.sp)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.ContentCopy,
@@ -281,13 +330,13 @@ fun RealisticBankCard(
                                 text = IranianBankHelper.formatIban(card.iban),
                                 color = Color.White,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
                                 style = TextStyle(textDirection = TextDirection.Ltr)
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("شبا", color = Color.White.copy(alpha = 0.65f), fontSize = 10.sp)
+                                Text("شماره شبا", color = Color.White.copy(alpha = 0.75f), fontSize = 10.sp)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     imageVector = Icons.Default.ContentCopy,
@@ -300,29 +349,54 @@ fun RealisticBankCard(
                     }
                 }
 
-                // Bottom Section: Person Name & Expiry/CVV2 if personal
+                // Bottom Section: Person / Owner Name & Shetab Emblem / CVV2
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = personName,
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    if (card.cardKind == "personal" && (card.cvv2.isNotBlank() || card.expiryDate.isNotBlank())) {
+                    Column {
                         Text(
-                            text = listOfNotNull(
-                                if (card.cvv2.isNotBlank()) "CVV2: ${card.cvv2}" else null,
-                                if (card.expiryDate.isNotBlank()) "Exp: ${card.expiryDate}" else null
-                            ).joinToString(" | "),
-                            color = Color.White.copy(alpha = 0.85f),
-                            fontSize = 10.sp,
-                            fontFamily = FontFamily.Monospace
+                            text = "صاحب کارت:",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 9.sp
                         )
+                        Text(
+                            text = personName,
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (card.cardKind == "personal" && (card.cvv2.isNotBlank() || card.expiryDate.isNotBlank())) {
+                            Text(
+                                text = listOfNotNull(
+                                    if (card.cvv2.isNotBlank()) "CVV2: ${card.cvv2}" else null,
+                                    if (card.expiryDate.isNotBlank()) "انقضا: ${card.expiryDate}" else null
+                                ).joinToString("  |  "),
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = FontFamily.Monospace
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        // Shetab Emblem Badge (عضو شتاب)
+                        Surface(
+                            color = Color.White.copy(alpha = 0.25f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = "شتاب",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }

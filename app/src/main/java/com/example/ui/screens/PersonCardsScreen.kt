@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +67,7 @@ fun PersonCardsScreen(
     val personsWithCards by viewModel.personsWithCards.collectAsState()
     val personWithCards = personsWithCards.firstOrNull { it.person.id == personId }
 
+    val context = LocalContext.current
     val selectedCardIds = remember { mutableStateListOf<Int>() }
     var showShareModal by remember { mutableStateOf(false) }
 
@@ -88,31 +91,42 @@ fun PersonCardsScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Add Card FAB
-                FloatingActionButton(
+                // 1. Add Card FAB (Right side in RTL)
+                ExtendedFloatingActionButton(
                     onClick = onOpenAddCardDialog,
+                    icon = { Icon(Icons.Default.Add, contentDescription = "Add Card", tint = Color.White) },
+                    text = {
+                        Text(
+                            "افزودن کارت",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
                     containerColor = Color(0xFF07815D),
                     modifier = Modifier.testTag("add_card_to_person_fab")
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Card", tint = Color.White)
-                }
+                )
 
-                // Share Selected Cards FAB
-                if (selectedCardIds.isNotEmpty()) {
-                    ExtendedFloatingActionButton(
-                        onClick = { showShareModal = true },
-                        icon = { Icon(Icons.Default.Share, contentDescription = null, tint = Color.White) },
-                        text = {
-                            Text(
-                                "ارسال (${selectedCardIds.size})",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        containerColor = Color(0xFF1475E8),
-                        modifier = Modifier.testTag("share_selected_cards_fab")
-                    )
-                }
+                // 2. Share Selected Cards FAB (Left side in RTL, permanently visible with dynamic count)
+                val count = selectedCardIds.size
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (count > 0) {
+                            showShareModal = true
+                        } else {
+                            Toast.makeText(context, "لطفاً ابتدا حداقل یک کارت را انتخاب کنید", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Share, contentDescription = null, tint = Color.White) },
+                    text = {
+                        Text(
+                            "ارسال ($count)",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    containerColor = if (count > 0) Color(0xFF1475E8) else Color(0xFF1475E8).copy(alpha = 0.7f),
+                    modifier = Modifier.testTag("share_selected_cards_fab")
+                )
             }
         }
     ) { innerPadding ->
