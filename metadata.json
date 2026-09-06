@@ -1,6 +1,5 @@
 {
-  "name": "کارت‌یار",
-  "description": "مدیریت و ذخیره هوشمند کارت‌های بانکی مخاطبان، مشتریان و کارت‌های شخصی با امکان ارسال سریع شبا و کارت",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "کارت‌یار — محیط طراحی",
+  "description": "نسخه وب آفلاین برای طراحی و پیش‌نمایش رابط فارسی کارت‌یار در Google AI Studio",
+  "requestFramePermissions": []
 }

@@ -7,3 +7,6 @@ app/android/.gradle/
 app/android/build/
 app/android/local.properties
 outputs/*.apk
+
+node_modules/
+dist/
