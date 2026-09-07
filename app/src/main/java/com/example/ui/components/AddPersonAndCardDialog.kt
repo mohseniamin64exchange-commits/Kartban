@@ -528,13 +528,14 @@ fun AddPersonAndCardDialog(
                     }
                 }
 
-                // 10. Submit & Cancel Buttons
+                // 10. Submit & Cancel Buttons (Equal Size)
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // Save Button (Navy Background)
                         Button(
                             onClick = {
                                 if (personName.isNotBlank() && cardNumber.length >= 16) {
@@ -569,11 +570,20 @@ fun AddPersonAndCardDialog(
                             Text("ذخیره کارت", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         }
 
-                        TextButton(
+                        // Cancel Button (Red Background)
+                        Button(
                             onClick = onDismiss,
-                            modifier = Modifier.height(48.dp)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFDC2626),
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .testTag("cancel_person_card_btn"),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("انصراف")
+                            Text("انصراف", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
