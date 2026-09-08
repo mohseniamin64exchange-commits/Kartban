@@ -227,11 +227,27 @@ fun EditCardDialog(
             }
 
             // Card Number Input
+            val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
+            val cardValidation = IranianBankHelper.validateCardNumber(normalizedCard)
+            val isCardLength16 = normalizedCard.length == 16
+            val isCardInvalid = isCardLength16 && !cardValidation.isValid
+
+            val cleanIban = IranianBankHelper.normalizeIban(iban)
+            val isIbanTyped = cleanIban.isNotEmpty() && cleanIban != "IR"
+            val ibanValidation = IranianBankHelper.validateIban(cleanIban, isOptional = true)
+            val isIbanInvalid = isIbanTyped && cleanIban.length == 26 && !ibanValidation.isValid
+
             OutlinedTextField(
                 value = cardNumber,
                 onValueChange = { input ->
                     val clean = IranianBankHelper.normalizeCardNumber(input).take(16)
                     cardNumber = clean
+                    if (clean.length >= 6) {
+                        val detected = IranianBankHelper.detectBankByCardNumber(clean)
+                        if (detected != null) {
+                            selectedBank = detected
+                        }
+                    }
                 },
                 label = { Text("شماره ۱۶ رقمی کارت *") },
                 placeholder = { Text("6037-xxxx-xxxx-xxxx") },
@@ -243,6 +259,14 @@ fun EditCardDialog(
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = isCardInvalid,
+                supportingText = {
+                    if (isCardInvalid) {
+                        Text("شماره کارت معتبر نیست", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                    } else if (normalizedCard.length in 1..15) {
+                        Text("${normalizedCard.length} از ۱۶ رقم وارد شده", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("edit_card_number_input"),
@@ -257,7 +281,7 @@ fun EditCardDialog(
             // Account Number Input
             OutlinedTextField(
                 value = accountNumber,
-                onValueChange = { accountNumber = IranianBankHelper.normalizeCardNumber(it) },
+                onValueChange = { accountNumber = IranianBankHelper.normalizeDigits(it) },
                 label = { Text("شماره حساب (اختیاری)") },
                 placeholder = { Text("مثلاً 0102030405...") },
                 leadingIcon = {
@@ -283,11 +307,8 @@ fun EditCardDialog(
             OutlinedTextField(
                 value = iban,
                 onValueChange = { input ->
-                    var clean = input.uppercase().filter { it.isLetterOrDigit() }
-                    if (!clean.startsWith("IR") && clean.isNotEmpty()) {
-                        clean = "IR$clean"
-                    }
-                    iban = clean.take(26)
+                    val clean = IranianBankHelper.normalizeIban(input).take(26)
+                    iban = clean
                 },
                 label = { Text("شماره شبا (اختیاری)") },
                 placeholder = { Text("IR000000000000000000000000") },
@@ -299,6 +320,14 @@ fun EditCardDialog(
                     )
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                isError = isIbanInvalid,
+                supportingText = {
+                    if (isIbanInvalid) {
+                        Text("شماره شبا معتبر نیست", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                    } else if (isIbanTyped && cleanIban.length < 26) {
+                        Text("${cleanIban.length} از ۲۶ نویسه وارد شده", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("edit_iban_input"),
@@ -485,18 +514,20 @@ fun EditCardDialog(
                     )
                 }
 
-                val canSubmit = IranianBankHelper.normalizeCardNumber(cardNumber).length == 16
+                val canSubmit = cardValidation.isValid && ibanValidation.isValid
                 Button(
                     onClick = {
-                        if (canSubmit) {
+                        val cardVal = IranianBankHelper.validateCardNumber(cardNumber)
+                        val ibanVal = IranianBankHelper.validateIban(iban, isOptional = true)
+                        if (cardVal.isValid && ibanVal.isValid) {
                             val normalized = IranianBankHelper.normalizeCardNumber(cardNumber)
                             onSubmit(
                                 card.copy(
                                     bankName = selectedBank.name,
                                     bankType = selectedBank.typeKey,
                                     cardNumber = normalized,
-                                    accountNumber = IranianBankHelper.normalizeCardNumber(accountNumber),
-                                    iban = iban.uppercase().filter { it.isLetterOrDigit() },
+                                    accountNumber = IranianBankHelper.normalizeDigits(accountNumber),
+                                    iban = IranianBankHelper.normalizeIban(iban),
                                     cardKind = cardKind,
                                     cvv2 = if (cardKind == "personal") cvv2 else "",
                                     expiryDate = if (cardKind == "personal") expiryDate else "",

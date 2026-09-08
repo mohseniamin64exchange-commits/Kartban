@@ -318,19 +318,43 @@ fun AddPersonAndCardDialog(
                 }
 
                 // 4. Card Number
+                val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
+                val cardValidation = IranianBankHelper.validateCardNumber(normalizedCard)
+                val isCardLength16 = normalizedCard.length == 16
+                val isCardInvalid = isCardLength16 && !cardValidation.isValid
+
+                val cleanIban = IranianBankHelper.normalizeIban(iban)
+                val isIbanTyped = cleanIban.isNotEmpty() && cleanIban != "IR"
+                val ibanValidation = IranianBankHelper.validateIban(cleanIban, isOptional = true)
+                val isIbanInvalid = isIbanTyped && cleanIban.length == 26 && !ibanValidation.isValid
+
                 item {
                     OutlinedTextField(
                         value = cardNumber,
                         onValueChange = { input ->
-                            val clean = input.filter { it.isDigit() }.take(16)
+                            val clean = IranianBankHelper.normalizeCardNumber(input).take(16)
                             cardNumber = clean
+                            if (clean.length >= 6) {
+                                val detected = IranianBankHelper.detectBankByCardNumber(clean)
+                                if (detected != null) {
+                                    selectedBank = detected
+                                }
+                            }
                         },
-                        label = { Text("شماره ۱۶ رقمی کارت") },
+                        label = { Text("شماره ۱۶ رقمی کارت *") },
                         placeholder = { Text("۶۱۰۴ ۳۳۷۸ ۹۰۱۲ ۳۴۵۶") },
                         leadingIcon = { Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color(0xFF164D98)) },
                         colors = navyFieldColors,
                         shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = isCardInvalid,
+                        supportingText = {
+                            if (isCardInvalid) {
+                                Text("شماره کارت معتبر نیست", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            } else if (normalizedCard.length in 1..15) {
+                                Text("${normalizedCard.length} از ۱۶ رقم وارد شده", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("add_card_number_input"),
@@ -342,8 +366,8 @@ fun AddPersonAndCardDialog(
                 item {
                     OutlinedTextField(
                         value = accountNumber,
-                        onValueChange = { accountNumber = it.filter { ch -> ch.isDigit() } },
-                        label = { Text("شماره حساب") },
+                        onValueChange = { accountNumber = IranianBankHelper.normalizeDigits(it) },
+                        label = { Text("شماره حساب (اختیاری)") },
                         placeholder = { Text("۱۲۳۴۵۶۷۸۹") },
                         leadingIcon = { Icon(Icons.Default.AccountBalance, contentDescription = null, tint = Color(0xFF164D98)) },
                         colors = navyFieldColors,
@@ -359,17 +383,22 @@ fun AddPersonAndCardDialog(
                     OutlinedTextField(
                         value = iban,
                         onValueChange = { input ->
-                            var clean = input.uppercase().filter { it.isLetterOrDigit() }
-                            if (!clean.startsWith("IR")) {
-                                clean = "IR$clean"
-                            }
-                            iban = clean.take(26)
+                            val clean = IranianBankHelper.normalizeIban(input).take(26)
+                            iban = clean
                         },
-                        label = { Text("شماره شبا (IBAN)") },
+                        label = { Text("شماره شبا (IBAN) (اختیاری)") },
                         placeholder = { Text("IR120170000000123456789001") },
                         leadingIcon = { Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color(0xFF164D98)) },
                         colors = navyFieldColors,
                         shape = RoundedCornerShape(14.dp),
+                        isError = isIbanInvalid,
+                        supportingText = {
+                            if (isIbanInvalid) {
+                                Text("شماره شبا معتبر نیست", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                            } else if (isIbanTyped && cleanIban.length < 26) {
+                                Text("${cleanIban.length} از ۲۶ نویسه وارد شده", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -606,10 +635,13 @@ fun AddPersonAndCardDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Save Button (Navy Background)
+                        val canSave = personName.isNotBlank() && cardValidation.isValid && ibanValidation.isValid
                         Button(
                             onClick = {
                                 val normalizedNumber = IranianBankHelper.normalizeCardNumber(cardNumber)
-                                if (personName.isNotBlank() && normalizedNumber.length >= 16) {
+                                val cardVal = IranianBankHelper.validateCardNumber(normalizedNumber)
+                                val ibanVal = IranianBankHelper.validateIban(iban, isOptional = true)
+                                if (personName.isNotBlank() && cardVal.isValid && ibanVal.isValid) {
                                     onSubmit(
                                         personName,
                                         personKind,
@@ -628,7 +660,7 @@ fun AddPersonAndCardDialog(
                                     onDismiss()
                                 }
                             },
-                            enabled = personName.isNotBlank() && IranianBankHelper.normalizeCardNumber(cardNumber).length >= 16,
+                            enabled = canSave,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF0A347A),
                                 contentColor = Color.White,

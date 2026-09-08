@@ -120,15 +120,25 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         isDefault: Boolean = false
     ) {
         viewModelScope.launch {
+            val cardValidation = IranianBankHelper.validateCardNumber(cardNumber)
+            if (!cardValidation.isValid) {
+                showToast(cardValidation.errorMessage ?: "شماره کارت معتبر نیست")
+                return@launch
+            }
+
+            val ibanValidation = IranianBankHelper.validateIban(iban, isOptional = true)
+            if (!ibanValidation.isValid) {
+                showToast(ibanValidation.errorMessage ?: "شماره شبا معتبر نیست")
+                return@launch
+            }
+
             val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
-            if (normalizedCard.isNotEmpty()) {
-                val existingCard = repository.findCardByNumber(normalizedCard)
-                if (existingCard != null) {
-                    val owner = repository.getPersonById(existingCard.personId)
-                    val ownerName = owner?.name ?: "مخاطب دیگری"
-                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
-                    return@launch
-                }
+            val existingCard = repository.findCardByNumber(normalizedCard)
+            if (existingCard != null) {
+                val owner = repository.getPersonById(existingCard.personId)
+                val ownerName = owner?.name ?: "مخاطب دیگری"
+                showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
+                return@launch
             }
 
             // Find existing person with same name or create new
@@ -163,8 +173,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 bankName = bankName,
                 bankType = bankType,
                 cardNumber = normalizedCard,
-                accountNumber = IranianBankHelper.normalizeCardNumber(accountNumber),
-                iban = iban.uppercase().filter { it.isLetterOrDigit() },
+                accountNumber = IranianBankHelper.normalizeDigits(accountNumber),
+                iban = IranianBankHelper.normalizeIban(iban),
                 cardKind = cardKind,
                 cvv2 = finalCvv2,
                 expiryDate = finalExpiry,
@@ -191,15 +201,25 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         isDefault: Boolean = false
     ) {
         viewModelScope.launch {
+            val cardValidation = IranianBankHelper.validateCardNumber(cardNumber)
+            if (!cardValidation.isValid) {
+                showToast(cardValidation.errorMessage ?: "شماره کارت معتبر نیست")
+                return@launch
+            }
+
+            val ibanValidation = IranianBankHelper.validateIban(iban, isOptional = true)
+            if (!ibanValidation.isValid) {
+                showToast(ibanValidation.errorMessage ?: "شماره شبا معتبر نیست")
+                return@launch
+            }
+
             val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
-            if (normalizedCard.isNotEmpty()) {
-                val existingCard = repository.findCardByNumber(normalizedCard)
-                if (existingCard != null) {
-                    val owner = repository.getPersonById(existingCard.personId)
-                    val ownerName = owner?.name ?: "مخاطب دیگری"
-                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
-                    return@launch
-                }
+            val existingCard = repository.findCardByNumber(normalizedCard)
+            if (existingCard != null) {
+                val owner = repository.getPersonById(existingCard.personId)
+                val ownerName = owner?.name ?: "مخاطب دیگری"
+                showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
+                return@launch
             }
 
             if (isDefault) {
@@ -214,8 +234,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 bankName = bankName,
                 bankType = bankType,
                 cardNumber = normalizedCard,
-                accountNumber = IranianBankHelper.normalizeCardNumber(accountNumber),
-                iban = iban.uppercase().filter { it.isLetterOrDigit() },
+                accountNumber = IranianBankHelper.normalizeDigits(accountNumber),
+                iban = IranianBankHelper.normalizeIban(iban),
                 cardKind = cardKind,
                 cvv2 = finalCvv2,
                 expiryDate = finalExpiry,
@@ -237,15 +257,25 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateCard(card: BankCardEntity) {
         viewModelScope.launch {
+            val cardValidation = IranianBankHelper.validateCardNumber(card.cardNumber)
+            if (!cardValidation.isValid) {
+                showToast(cardValidation.errorMessage ?: "شماره کارت معتبر نیست")
+                return@launch
+            }
+
+            val ibanValidation = IranianBankHelper.validateIban(card.iban, isOptional = true)
+            if (!ibanValidation.isValid) {
+                showToast(ibanValidation.errorMessage ?: "شماره شبا معتبر نیست")
+                return@launch
+            }
+
             val normalizedCard = IranianBankHelper.normalizeCardNumber(card.cardNumber)
-            if (normalizedCard.isNotEmpty()) {
-                val existingCard = repository.findCardByNumber(normalizedCard)
-                if (existingCard != null && existingCard.id != card.id) {
-                    val owner = repository.getPersonById(existingCard.personId)
-                    val ownerName = owner?.name ?: "مخاطب دیگری"
-                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است.")
-                    return@launch
-                }
+            val existingCard = repository.findCardByNumber(normalizedCard)
+            if (existingCard != null && existingCard.id != card.id) {
+                val owner = repository.getPersonById(existingCard.personId)
+                val ownerName = owner?.name ?: "مخاطب دیگری"
+                showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است.")
+                return@launch
             }
 
             if (card.isDefault) {
@@ -257,8 +287,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
             val updated = card.copy(
                 cardNumber = normalizedCard,
-                accountNumber = IranianBankHelper.normalizeCardNumber(card.accountNumber),
-                iban = card.iban.uppercase().filter { it.isLetterOrDigit() },
+                accountNumber = IranianBankHelper.normalizeDigits(card.accountNumber),
+                iban = IranianBankHelper.normalizeIban(card.iban),
                 cvv2 = finalCvv2,
                 expiryDate = finalExpiry,
                 notes = card.notes.trim()
