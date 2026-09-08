@@ -133,16 +133,12 @@ fun AddPersonAndCardDialog(
                 .testTag("add_card_bottom_sheet"),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Navy Gradient Header Matching Main Screen Palette
+            // Gradient Header Matching Theme Palette
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFF164D98), Color(0xFF0D2E69))
-                        )
-                    )
+                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
@@ -154,7 +150,7 @@ fun AddPersonAndCardDialog(
                         Icon(
                             imageVector = Icons.Default.CreditCard,
                             contentDescription = null,
-                            tint = Color(0xFF9DC6FF),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -162,25 +158,25 @@ fun AddPersonAndCardDialog(
                             text = "افزودن شخص و کارت جدید",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
             }
 
             val navyFieldColors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF164D98),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                focusedContainerColor = Color(0xFF164D98).copy(alpha = 0.04f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                focusedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.04f),
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                focusedLabelColor = Color(0xFF164D98)
+                focusedLabelColor = MaterialTheme.colorScheme.primary
             )
 
             LazyColumn(

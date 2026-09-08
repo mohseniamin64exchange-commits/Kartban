@@ -71,16 +71,12 @@ fun EditPersonDialog(
                 .testTag("edit_person_bottom_sheet"),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Navy Gradient Header
+            // Header Matching Theme Palette
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(Color(0xFF164D98), Color(0xFF0D2E69))
-                        )
-                    )
+                    .background(MaterialTheme.colorScheme.primaryContainer)
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Row(
@@ -92,13 +88,13 @@ fun EditPersonDialog(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = Color(0xFF9DC6FF),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "ویرایش مشخصات مخاطب",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -113,7 +109,7 @@ fun EditPersonDialog(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "بستن",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }

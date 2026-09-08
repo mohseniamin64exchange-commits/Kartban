@@ -112,6 +112,11 @@ fun PersonCardsScreen(
 
     val person = personWithCards.person
     val cards = remember(personWithCards.cards) { KartFilterAndSortHelper.sortCards(personWithCards.cards) }
+    val isDarkMode by viewModel.isDarkMode.collectAsState()
+
+    val headerTextColor = if (isDarkMode) Color.White else MaterialTheme.colorScheme.onSurface
+    val headerSecondaryColor = if (isDarkMode) Color(0xFFD4E1F6) else MaterialTheme.colorScheme.onSurfaceVariant
+    val headerIconColor = if (isDarkMode) Color.White else MaterialTheme.colorScheme.onSurface
 
     Scaffold(
         floatingActionButtonPosition = androidx.compose.material3.FabPosition.Start,
@@ -182,7 +187,11 @@ fun PersonCardsScreen(
                     .fillMaxWidth()
                     .background(
                         brush = Brush.verticalGradient(
-                            colors = listOf(Color(0xFF0D3F91), Color(0xFF041B50))
+                            colors = if (isDarkMode) {
+                                listOf(Color(0xFF0D3F91), Color(0xFF041B50))
+                            } else {
+                                listOf(Color(0xFFFFFFFF), Color(0xFFF0F2F5))
+                            }
                         )
                     )
                     .statusBarsPadding()
@@ -201,7 +210,7 @@ fun PersonCardsScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Back",
-                                tint = Color.White
+                                tint = headerIconColor
                             )
                         }
 
@@ -213,7 +222,7 @@ fun PersonCardsScreen(
                                 Icon(
                                     imageVector = if (person.isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
                                     contentDescription = if (person.isPinned) "برداشتن سنجاق" else "سنجاق کردن مخاطب",
-                                    tint = if (person.isPinned) Color(0xFFFBBF24) else Color.White
+                                    tint = if (person.isPinned) Color(0xFFD97706) else headerIconColor
                                 )
                             }
 
@@ -224,7 +233,7 @@ fun PersonCardsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "ویرایش مخاطب",
-                                    tint = Color.White
+                                    tint = headerIconColor
                                 )
                             }
 
@@ -235,7 +244,7 @@ fun PersonCardsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "حذف مخاطب",
-                                    tint = Color.White.copy(alpha = 0.8f)
+                                    tint = if (isDarkMode) Color.White.copy(alpha = 0.8f) else Color(0xFFDC2626)
                                 )
                             }
                         }
@@ -254,7 +263,7 @@ fun PersonCardsScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = person.name,
-                                    color = Color.White,
+                                    color = headerTextColor,
                                     fontSize = 22.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -263,21 +272,21 @@ fun PersonCardsScreen(
                                     Icon(
                                         imageVector = Icons.Default.PushPin,
                                         contentDescription = "سنجاق شده",
-                                        tint = Color(0xFFFBBF24),
+                                        tint = Color(0xFFD97706),
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
                             Text(
                                 text = "${cards.size} کارت بانکی",
-                                color = Color(0xFFD4E1F6),
+                                color = headerSecondaryColor,
                                 fontSize = 13.sp
                             )
 
                             if (userSettings.showNotesInList && person.notes.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Surface(
-                                    color = Color.White.copy(alpha = 0.18f),
+                                    color = if (isDarkMode) Color.White.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
                                     shape = RoundedCornerShape(12.dp)
                                 ) {
                                     Row(
@@ -287,13 +296,13 @@ fun PersonCardsScreen(
                                         Icon(
                                             imageVector = Icons.Default.Notes,
                                             contentDescription = null,
-                                            tint = Color(0xFF9DC6FF),
+                                            tint = if (isDarkMode) Color(0xFF9DC6FF) else MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = person.notes,
-                                            color = Color.White,
+                                            color = headerTextColor,
                                             fontSize = 12.sp
                                         )
                                     }

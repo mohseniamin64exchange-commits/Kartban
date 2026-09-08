@@ -23,14 +23,16 @@ private val DarkColorScheme = darkColorScheme(
 private val LightColorScheme = lightColorScheme(
     primary = Navy800,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE2EFFF),
-    onPrimaryContainer = Navy900,
+    primaryContainer = Color(0xFFE8F0FE),
+    onPrimaryContainer = Navy800,
     background = LightCanvas,
-    onBackground = Color(0xFF111827),
+    onBackground = LightTextPrimary,
     surface = LightSurface,
-    onSurface = Color(0xFF111827),
-    surfaceVariant = Color(0xFFF1F5F9),
-    onSurfaceVariant = Color(0xFF64748B)
+    onSurface = LightTextPrimary,
+    surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = LightTextSecondary,
+    outline = LightOutline,
+    outlineVariant = Color(0xFFE5E7EB)
 )
 
 @Composable

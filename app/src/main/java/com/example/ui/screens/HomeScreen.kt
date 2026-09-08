@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -155,22 +156,26 @@ fun HomeScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onOpenAddDialog,
-                icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color.White) },
-                text = { Text("افزودن شخص یا کارت", color = Color.White, fontWeight = FontWeight.Bold) },
-                containerColor = Color(0xFF0A347A),
+                icon = { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary) },
+                text = { Text("افزودن شخص یا کارت", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold) },
+                containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(bottom = 12.dp)
                     .testTag("add_person_card_fab")
             )
         }
     ) { innerPadding ->
+        val headerTextColor = if (isDarkMode) Color.White else MaterialTheme.colorScheme.onSurface
+        val headerSecondaryColor = if (isDarkMode) Color(0xFFC3CEE1) else MaterialTheme.colorScheme.onSurfaceVariant
+        val headerIconColor = if (isDarkMode) Color.White else MaterialTheme.colorScheme.onSurface
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Hero Navy Header
+            // Hero Navy / Light Header
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -179,7 +184,7 @@ fun HomeScreen(
                             colors = if (isDarkMode) {
                                 listOf(Color(0xFF071C45), Color(0xFF020C24))
                             } else {
-                                listOf(Color(0xFF164D98), Color(0xFF0D2E69))
+                                listOf(Color(0xFFFFFFFF), Color(0xFFF0F2F5))
                             }
                         )
                     )
@@ -198,13 +203,13 @@ fun HomeScreen(
                                 onClick = { viewModel.clearPersonSelection() },
                                 modifier = Modifier.align(Alignment.CenterStart)
                             ) {
-                                Icon(Icons.Default.Close, contentDescription = "لغو انتخاب", tint = Color.White)
+                                Icon(Icons.Default.Close, contentDescription = "لغو انتخاب", tint = headerIconColor)
                             }
 
                             // Center: Selected Count
                             Text(
                                 text = "${selectedPersonIds.size} مخاطب انتخاب شد",
-                                color = Color.White,
+                                color = headerTextColor,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -220,7 +225,7 @@ fun HomeScreen(
                                         }
                                     }
                                 ) {
-                                    Icon(Icons.Default.SelectAll, contentDescription = "انتخاب همه", tint = Color.White)
+                                    Icon(Icons.Default.SelectAll, contentDescription = "انتخاب همه", tint = headerIconColor)
                                 }
                                 IconButton(
                                     onClick = { showDeleteConfirm = true }
@@ -243,7 +248,7 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.Settings,
                                         contentDescription = "تنظیمات",
-                                        tint = Color.White
+                                        tint = headerIconColor
                                     )
                                 }
 
@@ -315,13 +320,13 @@ fun HomeScreen(
                                 Icon(
                                     imageVector = Icons.Default.CreditCard,
                                     contentDescription = null,
-                                    tint = Color(0xFF9DC6FF),
+                                    tint = if (isDarkMode) Color(0xFF9DC6FF) else MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(28.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "کارت‌یار",
-                                    color = Color.White,
+                                    color = headerTextColor,
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -336,7 +341,7 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.QrCodeScanner,
                                         contentDescription = "اسکن QR",
-                                        tint = Color.White
+                                        tint = headerIconColor
                                     )
                                 }
                                 IconButton(
@@ -346,7 +351,7 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
                                         contentDescription = "تغییر حالت شب و روز",
-                                        tint = Color.White
+                                        tint = headerIconColor
                                     )
                                 }
                             }
@@ -359,26 +364,26 @@ fun HomeScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = { Text("جستجوی نام، شماره کارت یا شبا", color = Color(0xFFAAB8D0), fontSize = 13.sp) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF9EB4DA)) },
+                        placeholder = { Text("جستجوی نام، شماره کارت یا شبا", color = if (isDarkMode) Color(0xFFAAB8D0) else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = if (isDarkMode) Color(0xFF9EB4DA) else MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingIcon = if (searchQuery.isNotBlank()) {
                             {
                                 IconButton(
                                     onClick = { viewModel.onSearchQueryChange("") },
                                     modifier = Modifier.testTag("clear_search_btn")
                                 ) {
-                                    Icon(Icons.Default.Close, contentDescription = "پاک کردن جستجو", tint = Color.White)
+                                    Icon(Icons.Default.Close, contentDescription = "پاک کردن جستجو", tint = headerIconColor)
                                 }
                             }
                         } else null,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White.copy(alpha = 0.12f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.08f),
-                            focusedBorderColor = Color(0xFFA9C9FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            focusedContainerColor = if (isDarkMode) Color.White.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = if (isDarkMode) Color.White.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant,
+                            focusedBorderColor = if (isDarkMode) Color(0xFFA9C9FF) else MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = if (isDarkMode) Color.White.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline,
+                            focusedTextColor = headerTextColor,
+                            unfocusedTextColor = headerTextColor
                         ),
                         singleLine = true,
                         modifier = Modifier
@@ -404,12 +409,20 @@ fun HomeScreen(
                                 Surface(
                                     onClick = { viewModel.setGroupFilter(filter) },
                                     shape = RoundedCornerShape(20.dp),
-                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.15f),
+                                    color = if (isSelected) {
+                                        if (isDarkMode) Color.White else MaterialTheme.colorScheme.primary
+                                    } else {
+                                        if (isDarkMode) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                                    },
                                     modifier = Modifier.testTag("filter_tab_${filter.name}")
                                 ) {
                                     Text(
                                         text = filter.title,
-                                        color = if (isSelected) Color(0xFF0A347A) else Color.White,
+                                        color = if (isSelected) {
+                                            if (isDarkMode) Color(0xFF0A347A) else MaterialTheme.colorScheme.onPrimary
+                                        } else {
+                                            if (isDarkMode) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
                                         fontSize = 12.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
@@ -424,7 +437,7 @@ fun HomeScreen(
                             Surface(
                                 onClick = { sortMenuExpanded = true },
                                 shape = RoundedCornerShape(20.dp),
-                                color = Color.White.copy(alpha = 0.15f),
+                                color = if (isDarkMode) Color.White.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
                                 modifier = Modifier.testTag("sort_menu_button")
                             ) {
                                 Row(
@@ -434,13 +447,13 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.Sort,
                                         contentDescription = "مرتب‌سازی",
-                                        tint = Color.White,
+                                        tint = headerIconColor,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = sortOption.title,
-                                        color = Color.White,
+                                        color = headerTextColor,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Medium
                                     )
@@ -486,7 +499,8 @@ fun HomeScreen(
                     // Stats Banner (Total Contacts & Total Cards)
                     Surface(
                         shape = RoundedCornerShape(16.dp),
-                        color = Color.White.copy(alpha = 0.12f),
+                        color = if (isDarkMode) Color.White.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+                        border = if (isDarkMode) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -500,22 +514,26 @@ fun HomeScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = Color(0xFF78AEF7),
+                                    color = if (isDarkMode) Color(0xFF78AEF7) else MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.size(40.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.People, contentDescription = null, tint = Color(0xFF0B367D))
+                                        Icon(
+                                            Icons.Default.People,
+                                            contentDescription = null,
+                                            tint = if (isDarkMode) Color(0xFF0B367D) else MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
                                         text = "$totalPersons",
-                                        color = Color.White,
+                                        color = headerTextColor,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Text(text = "مخاطب", color = Color(0xFFC3CEE1), fontSize = 12.sp)
+                                    Text(text = "مخاطب", color = headerSecondaryColor, fontSize = 12.sp)
                                 }
                             }
 
@@ -523,29 +541,33 @@ fun HomeScreen(
                                 modifier = Modifier
                                     .width(1.dp)
                                     .height(36.dp)
-                                    .background(Color.White.copy(alpha = 0.25f))
+                                    .background(if (isDarkMode) Color.White.copy(alpha = 0.25f) else MaterialTheme.colorScheme.outline)
                             )
 
                             // Total Cards
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = Color(0xFF78AEF7),
+                                    color = if (isDarkMode) Color(0xFF78AEF7) else MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.size(40.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.CreditCard, contentDescription = null, tint = Color(0xFF0B367D))
+                                        Icon(
+                                            Icons.Default.CreditCard,
+                                            contentDescription = null,
+                                            tint = if (isDarkMode) Color(0xFF0B367D) else MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
                                         text = "$totalCards",
-                                        color = Color.White,
+                                        color = headerTextColor,
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Text(text = "کارت بانکی", color = Color(0xFFC3CEE1), fontSize = 12.sp)
+                                    Text(text = "کارت بانکی", color = headerSecondaryColor, fontSize = 12.sp)
                                 }
                             }
                         }
