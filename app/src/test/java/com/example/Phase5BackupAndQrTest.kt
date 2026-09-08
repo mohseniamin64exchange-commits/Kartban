@@ -27,9 +27,9 @@ class Phase5BackupAndQrTest {
             personId = 1,
             bankName = "بانک سامان",
             bankType = "saman",
-            cardNumber = "6219861098765432",
+            cardNumber = "6219861234567690",
             accountNumber = "12345",
-            iban = "IR120170000000000000001234",
+            iban = "",
             cardKind = "customer",
             notes = "کارت اول"
         )
@@ -40,7 +40,7 @@ class Phase5BackupAndQrTest {
             bankType = "mellat",
             cardNumber = "6104337890123456",
             accountNumber = "67890",
-            iban = "IR120170000000000000006789",
+            iban = "",
             cardKind = "personal",
             notes = "کارت دوم"
         )
@@ -51,7 +51,7 @@ class Phase5BackupAndQrTest {
         val json = BackupHelper.exportBackupJson(list)
         assertTrue(json.contains("\"backupVersion\": 1"))
         assertTrue(json.contains("تست پشتیبان"))
-        assertTrue(json.contains("6219861098765432"))
+        assertTrue(json.contains("6219861234567690"))
 
         // 2. Parse
         val parseResult = BackupHelper.parseBackupJson(json)
@@ -78,9 +78,9 @@ class Phase5BackupAndQrTest {
             personId = 1,
             bankName = "بلوبانک",
             bankType = "blubank",
-            cardNumber = "6219861234567890",
+            cardNumber = "6219861234567690",
             accountNumber = "9988",
-            iban = "IR770170000000998877660001",
+            iban = "",
             cardKind = "customer"
         )
 
@@ -98,12 +98,41 @@ class Phase5BackupAndQrTest {
         val success = parseResult as QrParseResult.Success
         assertEquals("سارا علوی", success.payload.person.name)
         assertEquals(1, success.payload.cards.size)
-        assertEquals("6219861234567890", success.payload.cards.first().cardNumber)
+        assertEquals("6219861234567690", success.payload.cards.first().cardNumber)
     }
 
     @Test
     fun testQrTransferHelperParseInvalidHeader() {
         val result = QrTransferHelper.parseQrString("INVALID_HEADER_DATA")
         assertTrue(result is QrParseResult.Error)
+    }
+
+    @Test
+    fun testRestoreRejectsInvalidCards() {
+        // Construct backup with invalid card numbers (e.g. invalid checksum or not 16 digits)
+        val json = """
+            {
+              "app": "Kartban",
+              "backupVersion": 1,
+              "createdAt": 1700000000000,
+              "persons": [
+                {
+                  "person": { "name": "کاربر تست", "kind": "man" },
+                  "cards": [
+                    { "bankName": "سامان", "bankType": "saman", "cardNumber": "1111222233334445", "accountNumber": "123" },
+                    { "bankName": "ملت", "bankType": "mellat", "cardNumber": "6104337890123456", "accountNumber": "456" }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val parseResult = BackupHelper.parseBackupJson(json)
+        assertTrue(parseResult is BackupParseResult.Success)
+        val success = parseResult as BackupParseResult.Success
+        // valid card count is 1
+        assertEquals(1, success.cardCount)
+        // total cards in parsed payload is 2 (invalid card is kept in payload so restoreBackup can reject and count it)
+        assertEquals(2, success.payload.personGroups.first().cards.size)
     }
 }

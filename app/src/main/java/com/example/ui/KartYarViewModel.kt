@@ -54,7 +54,7 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         val database = AppDatabase.getDatabase(application)
-        repository = KartYarRepository(database.kartYarDao())
+        repository = KartYarRepository(database.kartYarDao(), database)
 
         totalPersonCount = repository.totalPersonCount.stateIn(
             scope = viewModelScope,
@@ -481,6 +481,9 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
             var msg = "بازیابی پشتیبان انجام شد: ${res.addedPersons} مخاطب و ${res.addedCards} کارت اضافه شد"
             if (res.duplicateCards > 0) {
                 msg += "، ${res.duplicateCards} کارت تکراری بود"
+            }
+            if (res.rejectedCards > 0) {
+                msg += "، ${res.rejectedCards} کارت نامعتبر رد شد"
             }
             showToast(msg)
             onResult(res)

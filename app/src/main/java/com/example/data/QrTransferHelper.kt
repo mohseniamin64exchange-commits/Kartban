@@ -248,73 +248,75 @@ object QrTransferHelper {
         repository: KartYarRepository,
         payload: QrPayload
     ): QrImportResult {
-        var addedCards = 0
-        var duplicateCards = 0
-        var rejectedCards = 0
+        return repository.runInTransaction {
+            var addedCards = 0
+            var duplicateCards = 0
+            var rejectedCards = 0
 
-        val existingPerson = repository.findPersonByName(payload.person.name)
-        val targetPersonId: Int
-        val isNewPerson: Boolean
+            val existingPerson = repository.findPersonByName(payload.person.name)
+            val targetPersonId: Int
+            val isNewPerson: Boolean
 
-        if (existingPerson != null) {
-            targetPersonId = existingPerson.id
-            isNewPerson = false
-        } else {
-            val newPerson = PersonEntity(
-                name = payload.person.name,
-                kind = payload.person.kind,
-                notes = payload.person.notes
-            )
-            targetPersonId = repository.insertPerson(newPerson).toInt()
-            isNewPerson = true
-        }
-
-        for (card in payload.cards) {
-            val normCardNum = IranianBankHelper.normalizeCardNumber(card.cardNumber)
-            val cardValidation = IranianBankHelper.validateCardNumber(normCardNum)
-            val ibanValidation = IranianBankHelper.validateIban(card.iban, isOptional = true)
-
-            // Validate card number checksum & IBAN format
-            if (!cardValidation.isValid || !ibanValidation.isValid) {
-                rejectedCards++
-                continue
+            if (existingPerson != null) {
+                targetPersonId = existingPerson.id
+                isNewPerson = false
+            } else {
+                val newPerson = PersonEntity(
+                    name = payload.person.name,
+                    kind = payload.person.kind,
+                    notes = payload.person.notes
+                )
+                targetPersonId = repository.insertPerson(newPerson).toInt()
+                isNewPerson = true
             }
 
-            // Check for duplicate card
-            if (repository.isCardNumberDuplicate(normCardNum)) {
-                duplicateCards++
-                continue
+            for (card in payload.cards) {
+                val normCardNum = IranianBankHelper.normalizeCardNumber(card.cardNumber)
+                val cardValidation = IranianBankHelper.validateCardNumber(normCardNum)
+                val ibanValidation = IranianBankHelper.validateIban(card.iban, isOptional = true)
+
+                // Validate card number checksum & IBAN format
+                if (!cardValidation.isValid || !ibanValidation.isValid) {
+                    rejectedCards++
+                    continue
+                }
+
+                // Check for duplicate card
+                if (repository.isCardNumberDuplicate(normCardNum)) {
+                    duplicateCards++
+                    continue
+                }
+
+                val newCard = BankCardEntity(
+                    personId = targetPersonId,
+                    bankName = card.bankName,
+                    bankType = card.bankType,
+                    cardNumber = normCardNum,
+                    accountNumber = card.accountNumber,
+                    iban = card.iban,
+                    cardKind = card.cardKind,
+                    cvv2 = if (card.cardKind == "personal") card.cvv2 else "",
+                    expiryDate = if (card.cardKind == "personal") card.expiryDate else "",
+                    cardColorStart = card.cardColorStart,
+                    cardColorEnd = card.cardColorEnd,
+                    useCustomAppearance = card.useCustomAppearance,
+                    isDefault = card.isDefault,
+                    isPinned = card.isPinned,
+                    orderIndex = card.orderIndex,
+                    notes = card.notes
+                )
+
+                repository.insertCard(newCard)
+                addedCards++
             }
 
-            val newCard = BankCardEntity(
-                personId = targetPersonId,
-                bankName = card.bankName,
-                bankType = card.bankType,
-                cardNumber = normCardNum,
-                accountNumber = card.accountNumber,
-                iban = card.iban,
-                cardKind = card.cardKind,
-                cvv2 = if (card.cardKind == "personal") card.cvv2 else "",
-                expiryDate = if (card.cardKind == "personal") card.expiryDate else "",
-                cardColorStart = card.cardColorStart,
-                cardColorEnd = card.cardColorEnd,
-                useCustomAppearance = card.useCustomAppearance,
-                isDefault = card.isDefault,
-                isPinned = card.isPinned,
-                orderIndex = card.orderIndex,
-                notes = card.notes
+            QrImportResult(
+                addedCards = addedCards,
+                duplicateCards = duplicateCards,
+                rejectedCards = rejectedCards,
+                targetPersonName = payload.person.name,
+                isNewPerson = isNewPerson
             )
-
-            repository.insertCard(newCard)
-            addedCards++
         }
-
-        return QrImportResult(
-            addedCards = addedCards,
-            duplicateCards = duplicateCards,
-            rejectedCards = rejectedCards,
-            targetPersonName = payload.person.name,
-            isNewPerson = isNewPerson
-        )
     }
 }

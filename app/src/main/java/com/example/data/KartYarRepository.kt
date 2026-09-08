@@ -1,8 +1,20 @@
 package com.example.data
 
+import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 
-class KartYarRepository(private val dao: KartYarDao) {
+class KartYarRepository(
+    private val dao: KartYarDao,
+    private val db: RoomDatabase? = null
+) {
+    suspend fun <T> runInTransaction(block: suspend () -> T): T {
+        return if (db != null) {
+            db.withTransaction { block() }
+        } else {
+            block()
+        }
+    }
     val allPersonsWithCards: Flow<List<PersonWithCards>> = dao.getAllPersonsWithCards()
     val totalPersonCount: Flow<Int> = dao.getPersonCount()
     val totalCardCount: Flow<Int> = dao.getCardCount()

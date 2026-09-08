@@ -56,7 +56,8 @@ data class RestoreResult(
     val addedPersons: Int,
     val mergedPersons: Int,
     val addedCards: Int,
-    val duplicateCards: Int
+    val duplicateCards: Int,
+    val rejectedCards: Int = 0
 )
 
 object BackupHelper {
@@ -155,8 +156,9 @@ object BackupHelper {
                     val cObj = cardsArray.optJSONObject(j) ?: continue
                     val rawCardNum = cObj.optString("cardNumber", "")
                     val normCardNum = IranianBankHelper.normalizeCardNumber(rawCardNum)
-                    if (normCardNum.length < 16) continue
+                    if (normCardNum.isEmpty()) continue
 
+                    val rawIban = cObj.optString("iban", "")
                     val bankType = cObj.optString("bankType", "")
                     val bankMeta = IranianBankHelper.detectBankByCardNumber(normCardNum)
                         ?: IranianBankHelper.getBankMetaByType(bankType)
@@ -166,7 +168,7 @@ object BackupHelper {
                         bankType = bankMeta.typeKey,
                         cardNumber = normCardNum,
                         accountNumber = cObj.optString("accountNumber", ""),
-                        iban = IranianBankHelper.normalizeIban(cObj.optString("iban", "")),
+                        iban = IranianBankHelper.normalizeIban(rawIban),
                         cardKind = cObj.optString("cardKind", "customer"),
                         cvv2 = cObj.optString("cvv2", ""),
                         expiryDate = cObj.optString("expiryDate", ""),
@@ -182,7 +184,11 @@ object BackupHelper {
                     cardList.add(cardData)
                 }
 
-                totalCards += cardList.size
+                val validCardsInGroup = cardList.count { card ->
+                    IranianBankHelper.validateCardNumber(card.cardNumber).isValid &&
+                    IranianBankHelper.validateIban(card.iban, isOptional = true).isValid
+                }
+                totalCards += validCardsInGroup
                 groupList.add(BackupPersonGroup(person = personData, cards = cardList))
             }
 
@@ -206,66 +212,78 @@ object BackupHelper {
     }
 
     suspend fun restoreBackup(repository: KartYarRepository, payload: BackupPayload): RestoreResult {
-        var addedPersons = 0
-        var mergedPersons = 0
-        var addedCards = 0
-        var duplicateCards = 0
+        return repository.runInTransaction {
+            var addedPersons = 0
+            var mergedPersons = 0
+            var addedCards = 0
+            var duplicateCards = 0
+            var rejectedCards = 0
 
-        for (group in payload.personGroups) {
-            val existingPerson = repository.findPersonByName(group.person.name)
-            val targetPersonId: Int
-            if (existingPerson != null) {
-                targetPersonId = existingPerson.id
-                mergedPersons++
-            } else {
-                val newPerson = PersonEntity(
-                    name = group.person.name,
-                    kind = group.person.kind,
-                    notes = group.person.notes,
-                    isPinned = group.person.isPinned,
-                    createdAt = group.person.createdAt
-                )
-                targetPersonId = repository.insertPerson(newPerson).toInt()
-                addedPersons++
-            }
-
-            for (card in group.cards) {
-                val normNum = IranianBankHelper.normalizeCardNumber(card.cardNumber)
-                if (repository.isCardNumberDuplicate(normNum)) {
-                    duplicateCards++
-                    continue
+            for (group in payload.personGroups) {
+                val existingPerson = repository.findPersonByName(group.person.name)
+                val targetPersonId: Int
+                if (existingPerson != null) {
+                    targetPersonId = existingPerson.id
+                    mergedPersons++
+                } else {
+                    val newPerson = PersonEntity(
+                        name = group.person.name,
+                        kind = group.person.kind,
+                        notes = group.person.notes,
+                        isPinned = group.person.isPinned,
+                        createdAt = group.person.createdAt
+                    )
+                    targetPersonId = repository.insertPerson(newPerson).toInt()
+                    addedPersons++
                 }
 
-                val newCard = BankCardEntity(
-                    personId = targetPersonId,
-                    bankName = card.bankName,
-                    bankType = card.bankType,
-                    cardNumber = normNum,
-                    accountNumber = card.accountNumber,
-                    iban = card.iban,
-                    cardKind = card.cardKind,
-                    cvv2 = if (card.cardKind == "personal") card.cvv2 else "",
-                    expiryDate = if (card.cardKind == "personal") card.expiryDate else "",
-                    cardColorStart = card.cardColorStart,
-                    cardColorEnd = card.cardColorEnd,
-                    useCustomAppearance = card.useCustomAppearance,
-                    isDefault = card.isDefault,
-                    isPinned = card.isPinned,
-                    orderIndex = card.orderIndex,
-                    notes = card.notes,
-                    createdAt = card.createdAt
-                )
+                for (card in group.cards) {
+                    val normNum = IranianBankHelper.normalizeCardNumber(card.cardNumber)
+                    val cardVal = IranianBankHelper.validateCardNumber(normNum)
+                    val ibanVal = IranianBankHelper.validateIban(card.iban, isOptional = true)
 
-                repository.insertCard(newCard)
-                addedCards++
+                    if (!cardVal.isValid || !ibanVal.isValid) {
+                        rejectedCards++
+                        continue
+                    }
+
+                    if (repository.isCardNumberDuplicate(normNum)) {
+                        duplicateCards++
+                        continue
+                    }
+
+                    val newCard = BankCardEntity(
+                        personId = targetPersonId,
+                        bankName = card.bankName,
+                        bankType = card.bankType,
+                        cardNumber = normNum,
+                        accountNumber = card.accountNumber,
+                        iban = card.iban,
+                        cardKind = card.cardKind,
+                        cvv2 = if (card.cardKind == "personal") card.cvv2 else "",
+                        expiryDate = if (card.cardKind == "personal") card.expiryDate else "",
+                        cardColorStart = card.cardColorStart,
+                        cardColorEnd = card.cardColorEnd,
+                        useCustomAppearance = card.useCustomAppearance,
+                        isDefault = card.isDefault,
+                        isPinned = card.isPinned,
+                        orderIndex = card.orderIndex,
+                        notes = card.notes,
+                        createdAt = card.createdAt
+                    )
+
+                    repository.insertCard(newCard)
+                    addedCards++
+                }
             }
-        }
 
-        return RestoreResult(
-            addedPersons = addedPersons,
-            mergedPersons = mergedPersons,
-            addedCards = addedCards,
-            duplicateCards = duplicateCards
-        )
+            RestoreResult(
+                addedPersons = addedPersons,
+                mergedPersons = mergedPersons,
+                addedCards = addedCards,
+                duplicateCards = duplicateCards,
+                rejectedCards = rejectedCards
+            )
+        }
     }
 }
