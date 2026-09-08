@@ -28,8 +28,14 @@ object KartFilterAndSortHelper {
             .thenBy { it.orderIndex }
             .thenByDescending { it.createdAt }
 
-    fun sortCards(cards: List<BankCardEntity>): List<BankCardEntity> {
-        return cards.sortedWith(BankCardComparator)
+    val BankCardNoDefaultComparator: Comparator<BankCardEntity> =
+        compareByDescending<BankCardEntity> { it.isPinned }
+            .thenBy { it.orderIndex }
+            .thenByDescending { it.createdAt }
+
+    fun sortCards(cards: List<BankCardEntity>, forceDefaultCardTop: Boolean = true): List<BankCardEntity> {
+        val comparator = if (forceDefaultCardTop) BankCardComparator else BankCardNoDefaultComparator
+        return cards.sortedWith(comparator)
     }
 
     /**
@@ -172,12 +178,12 @@ object KartFilterAndSortHelper {
         list: List<PersonWithCards>,
         query: String,
         sortOption: PersonSortOption,
-        groupFilter: CardGroupFilter
+        groupFilter: CardGroupFilter,
+        forceDefaultCardTop: Boolean = true
     ): List<PersonWithCards> {
-        // 1. Sort cards inside each person by priority:
-        // default card -> pinned card -> manual order -> createdAt
+        // 1. Sort cards inside each person by priority
         val personsWithSortedCards = list.map { pwc ->
-            pwc.copy(cards = sortCards(pwc.cards))
+            pwc.copy(cards = sortCards(pwc.cards, forceDefaultCardTop))
         }
 
         // 2. Filter by group ("All", "My Cards", "Other People's Cards")

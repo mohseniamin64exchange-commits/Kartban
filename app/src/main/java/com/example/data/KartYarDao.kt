@@ -96,4 +96,7 @@ interface KartYarDao {
 
     @Query("DELETE FROM persons WHERE id IN (:personIds)")
     suspend fun deletePersonsByIds(personIds: List<Int>)
+
+    @Query("UPDATE bank_cards SET useCustomAppearance = 0")
+    suspend fun resetAllCardAppearances()
 }

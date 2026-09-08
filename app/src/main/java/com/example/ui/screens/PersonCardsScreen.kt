@@ -85,6 +85,7 @@ fun PersonCardsScreen(
     onBack: () -> Unit,
     onOpenAddCardDialog: () -> Unit
 ) {
+    val userSettings by viewModel.userSettings.collectAsState()
     val personsWithCards by viewModel.personsWithCards.collectAsState()
     val personWithCards = personsWithCards.firstOrNull { it.person.id == personId }
 
@@ -273,7 +274,7 @@ fun PersonCardsScreen(
                                 fontSize = 13.sp
                             )
 
-                            if (person.notes.isNotBlank()) {
+                            if (userSettings.showNotesInList && person.notes.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Surface(
                                     color = Color.White.copy(alpha = 0.18f),
@@ -359,7 +360,8 @@ fun PersonCardsScreen(
                                 },
                                 onCopyAccountNumber = { accNumber ->
                                     viewModel.copyToClipboard("Account Number", accNumber, "شماره حساب کپی شد")
-                                }
+                                },
+                                showNotes = userSettings.showNotesInList
                             )
 
                             // Card Action Bar: Default Star / Pin / Move / Edit / Delete

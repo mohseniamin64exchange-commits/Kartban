@@ -59,6 +59,7 @@ fun RealisticBankCard(
     onCopyIban: (String) -> Unit,
     onCopyCardNumber: (String) -> Unit,
     onCopyAccountNumber: ((String) -> Unit)? = null,
+    showNotes: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val meta = remember(card.bankType, card.bankName) {
@@ -425,7 +426,7 @@ fun RealisticBankCard(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        if (card.notes.isNotBlank()) {
+                        if (showNotes && card.notes.isNotBlank()) {
                             Text(
                                 text = "یادداشت: ${card.notes}",
                                 color = Color.White.copy(alpha = 0.85f),

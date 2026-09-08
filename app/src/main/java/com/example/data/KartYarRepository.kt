@@ -71,4 +71,10 @@ class KartYarRepository(
     suspend fun deleteCardsByIds(cardIds: List<Int>) = dao.deleteCardsByIds(cardIds)
 
     suspend fun deletePersonsByIds(personIds: List<Int>) = dao.deletePersonsByIds(personIds)
+
+    suspend fun resetAllCardAppearances() {
+        runInTransaction {
+            dao.resetAllCardAppearances()
+        }
+    }
 }

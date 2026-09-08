@@ -23,6 +23,9 @@ import com.example.data.QrParseResult
 import com.example.data.QrPayload
 import com.example.data.QrTransferHelper
 import com.example.data.RestoreResult
+import com.example.data.AppTheme
+import com.example.data.SettingsRepository
+import com.example.data.UserSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,9 +38,24 @@ sealed class UiToastEvent {
     data class Show(val message: String) : UiToastEvent()
 }
 
+sealed class AppScreen {
+    data object Home : AppScreen()
+    data class PersonCards(val personId: Int) : AppScreen()
+    data object Settings : AppScreen()
+}
+
 class KartYarViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: KartYarRepository
+    private val settingsRepository = SettingsRepository(application)
+
+    val userSettings: StateFlow<UserSettings> = settingsRepository.settingsFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = UserSettings()
+    )
+
+    val currentScreen = MutableStateFlow<AppScreen>(AppScreen.Home)
     val searchQuery = MutableStateFlow("")
     val isDarkMode = MutableStateFlow(false)
     val selectedPersonId = MutableStateFlow<Int?>(null)
@@ -45,6 +63,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
     val selectedCardIds = MutableStateFlow<Set<Int>>(emptySet())
     val sortOption = MutableStateFlow(PersonSortOption.PINNED_FIRST)
     val groupFilter = MutableStateFlow(CardGroupFilter.ALL)
+
+    private var isSettingsInitialized = false
 
     private val _toastEvent = MutableStateFlow<UiToastEvent?>(null)
     val toastEvent: StateFlow<UiToastEvent?> = _toastEvent
@@ -68,6 +88,16 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
             initialValue = 0
         )
 
+        viewModelScope.launch {
+            settingsRepository.settingsFlow.collect { settings ->
+                if (!isSettingsInitialized) {
+                    isSettingsInitialized = true
+                    sortOption.value = settings.defaultSortOption
+                    groupFilter.value = settings.defaultGroupFilter
+                }
+            }
+        }
+
         // Seed sample data if database is empty
         viewModelScope.launch {
             val count = repository.totalPersonCount.first()
@@ -81,9 +111,16 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         repository.allPersonsWithCards,
         searchQuery,
         sortOption,
-        groupFilter
-    ) { list, query, sort, group ->
-        KartFilterAndSortHelper.filterAndSort(list, query, sort, group)
+        groupFilter,
+        userSettings
+    ) { list, query, sort, group, settings ->
+        KartFilterAndSortHelper.filterAndSort(
+            list = list,
+            query = query,
+            sortOption = sort,
+            groupFilter = group,
+            forceDefaultCardTop = settings.forceDefaultCardTop
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -109,6 +146,64 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
     fun selectPerson(personId: Int?) {
         selectedPersonId.value = personId
+        if (personId != null) {
+            currentScreen.value = AppScreen.PersonCards(personId)
+        } else {
+            currentScreen.value = AppScreen.Home
+        }
+    }
+
+    fun navigateToHome() {
+        selectedPersonId.value = null
+        currentScreen.value = AppScreen.Home
+    }
+
+    fun navigateToPersonCards(personId: Int) {
+        selectedPersonId.value = personId
+        currentScreen.value = AppScreen.PersonCards(personId)
+    }
+
+    fun navigateToSettings() {
+        currentScreen.value = AppScreen.Settings
+    }
+
+    fun updateAppTheme(theme: AppTheme) {
+        viewModelScope.launch {
+            settingsRepository.setAppTheme(theme)
+        }
+    }
+
+    fun updateDefaultSortOption(option: PersonSortOption) {
+        viewModelScope.launch {
+            settingsRepository.setDefaultSortOption(option)
+            setSortOption(option)
+        }
+    }
+
+    fun updateDefaultGroupFilter(filter: CardGroupFilter) {
+        viewModelScope.launch {
+            settingsRepository.setDefaultGroupFilter(filter)
+            setGroupFilter(filter)
+        }
+    }
+
+    fun updateShowNotesInList(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setShowNotesInList(show)
+        }
+    }
+
+    fun updateForceDefaultCardTop(force: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setForceDefaultCardTop(force)
+        }
+    }
+
+    fun resetAllCardAppearances() {
+        viewModelScope.launch {
+            repository.resetAllCardAppearances()
+            showToast("ظاهر تمامی کارت‌ها به حالت پیش‌فرض بانک بازنشانی شد")
+        }
     }
 
     fun addPersonAndCard(

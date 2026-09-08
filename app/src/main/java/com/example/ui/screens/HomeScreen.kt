@@ -43,8 +43,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TextButton
+import com.example.ui.components.AboutDialog
 import com.example.ui.components.BackupRestoreDialog
 import com.example.ui.components.QrScannerDialog
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -87,6 +89,7 @@ fun HomeScreen(
     onOpenPersonCards: (Int) -> Unit,
     onOpenAddDialog: () -> Unit
 ) {
+    val userSettings by viewModel.userSettings.collectAsState()
     val personsWithCards by viewModel.personsWithCards.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isDarkMode by viewModel.isDarkMode.collectAsState()
@@ -98,8 +101,13 @@ fun HomeScreen(
 
     var showBackupDialog by remember { mutableStateOf(false) }
     var showQrScanner by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     var showSettingsMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showAboutDialog) {
+        AboutDialog(onDismiss = { showAboutDialog = false })
+    }
 
     if (showBackupDialog) {
         BackupRestoreDialog(
@@ -246,6 +254,20 @@ fun HomeScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("تنظیمات")
+                                            }
+                                        },
+                                        onClick = {
+                                            showSettingsMenu = false
+                                            viewModel.navigateToSettings()
+                                        },
+                                        modifier = Modifier.testTag("menu_settings")
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(Icons.Default.SettingsBackupRestore, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 Text("پشتیبان‌گیری و بازیابی")
@@ -262,7 +284,7 @@ fun HomeScreen(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                                 Spacer(modifier = Modifier.width(8.dp))
-                                                Text("اسکن کد QR (دریافت کارت)")
+                                                Text("دریافت اطلاعات با QR")
                                             }
                                         },
                                         onClick = {
@@ -270,6 +292,20 @@ fun HomeScreen(
                                             showQrScanner = true
                                         },
                                         modifier = Modifier.testTag("menu_qr_scan")
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("درباره برنامه")
+                                            }
+                                        },
+                                        onClick = {
+                                            showSettingsMenu = false
+                                            showAboutDialog = true
+                                        },
+                                        modifier = Modifier.testTag("menu_about")
                                     )
                                 }
                             }
@@ -544,6 +580,7 @@ fun HomeScreen(
                             item = item,
                             isSelected = isSelected,
                             isSelectionMode = selectedPersonIds.isNotEmpty(),
+                            showNotes = userSettings.showNotesInList,
                             onClick = {
                                 if (selectedPersonIds.isNotEmpty()) {
                                     viewModel.togglePersonSelection(item.person.id)
@@ -573,6 +610,7 @@ fun PersonRowItem(
     item: PersonWithCards,
     isSelected: Boolean = false,
     isSelectionMode: Boolean = false,
+    showNotes: Boolean = true,
     onClick: () -> Unit,
     onLongClick: () -> Unit = {},
     onTogglePin: () -> Unit,
@@ -652,7 +690,7 @@ fun PersonRowItem(
                             )
                         }
                     }
-                    if (item.person.notes.isNotBlank()) {
+                    if (showNotes && item.person.notes.isNotBlank()) {
                         Text(
                             text = item.person.notes,
                             fontSize = 11.sp,

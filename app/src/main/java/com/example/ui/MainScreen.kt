@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -21,16 +22,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import com.example.data.AppTheme
 import com.example.ui.components.AddPersonAndCardDialog
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.PersonCardsScreen
+import com.example.ui.screens.SettingsScreen
 import com.example.ui.theme.MyApplicationTheme
 
 @Composable
 fun MainScreen(viewModel: KartYarViewModel) {
-    val isDarkMode by viewModel.isDarkMode.collectAsState()
-    val selectedPersonId by viewModel.selectedPersonId.collectAsState()
+    val userSettings by viewModel.userSettings.collectAsState()
+    val currentScreen by viewModel.currentScreen.collectAsState()
     val toastEvent by viewModel.toastEvent.collectAsState()
+
+    val darkTheme = when (userSettings.appTheme) {
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+    }
 
     var showAddDialog by remember { mutableStateOf(false) }
     var addDialogInitialPersonName by remember { mutableStateOf("") }
@@ -48,7 +57,7 @@ fun MainScreen(viewModel: KartYarViewModel) {
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        MyApplicationTheme(darkTheme = isDarkMode) {
+        MyApplicationTheme(darkTheme = darkTheme) {
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbarHostState) }
             ) { innerPadding ->
@@ -58,33 +67,41 @@ fun MainScreen(viewModel: KartYarViewModel) {
                         .padding(innerPadding)
                 ) {
                     AnimatedContent(
-                        targetState = selectedPersonId,
+                        targetState = currentScreen,
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "ScreenTransition"
-                    ) { personId ->
-                        if (personId == null) {
-                            HomeScreen(
-                                viewModel = viewModel,
-                                onOpenPersonCards = { pId ->
-                                    viewModel.selectPerson(pId)
-                                },
-                                onOpenAddDialog = {
-                                    addDialogInitialPersonName = ""
-                                    showAddDialog = true
-                                }
-                            )
-                        } else {
-                            PersonCardsScreen(
-                                personId = personId,
-                                viewModel = viewModel,
-                                onBack = { viewModel.selectPerson(null) },
-                                onOpenAddCardDialog = {
-                                    // Pre-fill person name if known
-                                    val currentPerson = viewModel.personsWithCards.value.firstOrNull { it.person.id == personId }
-                                    addDialogInitialPersonName = currentPerson?.person?.name ?: ""
-                                    showAddDialog = true
-                                }
-                            )
+                    ) { screen ->
+                        when (screen) {
+                            is AppScreen.Home -> {
+                                HomeScreen(
+                                    viewModel = viewModel,
+                                    onOpenPersonCards = { pId ->
+                                        viewModel.navigateToPersonCards(pId)
+                                    },
+                                    onOpenAddDialog = {
+                                        addDialogInitialPersonName = ""
+                                        showAddDialog = true
+                                    }
+                                )
+                            }
+                            is AppScreen.PersonCards -> {
+                                PersonCardsScreen(
+                                    personId = screen.personId,
+                                    viewModel = viewModel,
+                                    onBack = { viewModel.navigateToHome() },
+                                    onOpenAddCardDialog = {
+                                        val currentPerson = viewModel.personsWithCards.value.firstOrNull { it.person.id == screen.personId }
+                                        addDialogInitialPersonName = currentPerson?.person?.name ?: ""
+                                        showAddDialog = true
+                                    }
+                                )
+                            }
+                            is AppScreen.Settings -> {
+                                SettingsScreen(
+                                    viewModel = viewModel,
+                                    onBack = { viewModel.navigateToHome() }
+                                )
+                            }
                         }
                     }
 
