@@ -19,8 +19,29 @@ interface KartYarDao {
     @Query("SELECT * FROM persons WHERE id = :personId")
     fun getPersonWithCardsById(personId: Int): Flow<PersonWithCards?>
 
-    @Query("SELECT * FROM bank_cards WHERE personId = :personId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM bank_cards WHERE personId = :personId ORDER BY isDefault DESC, createdAt DESC")
     fun getCardsForPerson(personId: Int): Flow<List<BankCardEntity>>
+
+    @Query("SELECT * FROM bank_cards WHERE id = :cardId LIMIT 1")
+    suspend fun getCardById(cardId: Int): BankCardEntity?
+
+    @Query("SELECT * FROM persons WHERE id = :personId LIMIT 1")
+    suspend fun getPersonById(personId: Int): PersonEntity?
+
+    @Query("SELECT * FROM bank_cards WHERE cardNumber = :normalizedCardNumber LIMIT 1")
+    suspend fun findCardByNumber(normalizedCardNumber: String): BankCardEntity?
+
+    @Query("UPDATE bank_cards SET isDefault = 0 WHERE personId = :personId")
+    suspend fun clearDefaultCardsForPerson(personId: Int)
+
+    @Query("UPDATE bank_cards SET isDefault = 1 WHERE id = :cardId")
+    suspend fun setCardAsDefault(cardId: Int)
+
+    @Transaction
+    suspend fun setDefaultCard(personId: Int, cardId: Int) {
+        clearDefaultCardsForPerson(personId)
+        setCardAsDefault(cardId)
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPerson(person: PersonEntity): Long

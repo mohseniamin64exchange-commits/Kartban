@@ -1,31 +1,89 @@
-# اجرای کارت‌یار در Google AI Studio
+# Kartban
 
-این مخزن دو بخش دارد:
+Kartban is a native Android application for storing and managing bank card information and associated persons.
 
-- `app/`: برنامه اصلی Android با Flutter؛ مرجع نهایی منطق، امنیت و APK.
-- `index.html` و `person-cards.html`: همزاد طراحی وب برای پیش‌نمایش و ویرایش سریع در Google AI Studio.
+## Main Technologies
 
-## ورود به AI Studio
+- **Kotlin**
+- **Jetpack Compose**
+- **Room Database**
+- **ViewModel + StateFlow**
+- **Repository Pattern**
+- **Coroutines**
 
-1. وارد **Google AI Studio → Build** شوید.
-2. از علامت **+** کنار کادر پیام، **Import from GitHub** را انتخاب کنید.
-3. مخزن `mohseniamin64exchange-commits/kartyar` را انتخاب کنید.
-4. پلتفرم را روی **Web app** نگه دارید.
-5. پس از باز شدن پیش‌نمایش، متن `AI_STUDIO_PROMPT.md` را به عامل بدهید.
-6. تغییرات را از **Settings → GitHub** روی همین مخزن Push کنید.
-7. اینجا تغییرات را Pull می‌کنیم و طراحی تأییدشده را به Flutter منتقل می‌کنیم.
+## Project Structure
 
-> Google AI Studio پروژه Flutter را مستقیماً اجرا نمی‌کند. نسخه وب فقط محیط طراحی است و نباید قواعد امنیتی برنامه Android را تغییر دهد.
+The main Android source code is located under:
 
-## اجرای محلی نسخه طراحی
+`app/src/main/java/com/example/`
 
-```
-npm install
-npm run dev
-```
+Key directories and files:
 
-برای کنترل خروجی:
+### data/
+- `AppDatabase.kt`
+- `BankCardEntity.kt`
+- `PersonEntity.kt`
+- `PersonWithCards.kt`
+- `KartYarDao.kt`
+- `KartYarRepository.kt`
+- `IranianBankHelper.kt`
 
-```
-npm run build
-```
+### ui/
+- `KartYarViewModel.kt`
+- `MainScreen.kt`
+- `components/`
+- `screens/`
+
+## Current Features
+
+- Add persons, stores, and companies
+- Store multiple bank cards for each person
+- Store card number, account number, and IBAN
+- Store additional information for personal cards
+- Iranian bank detection/display
+- Search persons and banking information
+- Copy card information
+- Share card information
+- RTL/Persian UI support
+- Light and dark mode
+- Local storage using Room
+
+## Running the Project
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/mohseniamin64exchange-commits/Kartban.git
+   cd Kartban
+   ```
+2. Open it with **Android Studio**.
+3. Let Gradle sync.
+4. Select an Android device or emulator.
+5. Run the `app` module.
+
+## Android Configuration
+
+- **minSdk**: 24
+- **targetSdk**: 36
+- **compileSdk**: 36
+
+## Database
+
+Room is used with `PersonEntity` and `BankCardEntity`, with a one-to-many relation where each person can have multiple cards.
+
+## Project Status
+
+The project is still under development and is not yet ready for production release.
+
+The following areas still need review before release:
+- secure storage of sensitive banking information
+- Room migrations
+- backup configuration
+- release configuration
+- removal of sample/debug data
+
+## Google AI Studio
+
+- This project is **NOT** Flutter.
+- The main application is native Android using **Kotlin** and **Jetpack Compose**.
+- Any Google AI Studio related files are only for design/prototyping/development assistance.
+- The Android `app` module is the source of truth.

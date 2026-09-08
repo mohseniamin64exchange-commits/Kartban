@@ -31,5 +31,7 @@ data class BankCardEntity(
     val expiryDate: String = "", // ONLY allowed for "personal", locked/empty for "customer"
     val cardColorStart: String = "#80142A",
     val cardColorEnd: String = "#FF5B71",
+    val isDefault: Boolean = false,
+    val notes: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )

@@ -26,13 +26,18 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,6 +79,7 @@ fun AddPersonAndCardDialog(
     onSubmit: (
         personName: String,
         personKind: String,
+        personNotes: String,
         bankName: String,
         bankType: String,
         cardNumber: String,
@@ -81,13 +87,16 @@ fun AddPersonAndCardDialog(
         iban: String,
         cardKind: String,
         cvv2: String,
-        expiryDate: String
+        expiryDate: String,
+        cardNotes: String,
+        isDefault: Boolean
     ) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     var personName by remember { mutableStateOf(initialPersonName) }
     var personKind by remember { mutableStateOf("man") } // man, woman, store, company
+    var personNotes by remember { mutableStateOf("") }
     var selectedBank by remember { mutableStateOf(IranianBankHelper.defaultBanks.first()) }
     var bankDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -98,10 +107,12 @@ fun AddPersonAndCardDialog(
 
     var cvv2 by remember { mutableStateOf("") }
     var expiryDate by remember { mutableStateOf("") }
+    var cardNotes by remember { mutableStateOf("") }
+    var isDefault by remember { mutableStateOf(false) }
 
     // Auto-detect bank when card number reaches 6 digits
     LaunchedEffect(cardNumber) {
-        val digits = cardNumber.filter { it.isDigit() }
+        val digits = IranianBankHelper.normalizeCardNumber(cardNumber)
         if (digits.length >= 6) {
             val detected = IranianBankHelper.detectBankByCardNumber(digits)
             if (detected != null) {
@@ -241,6 +252,19 @@ fun AddPersonAndCardDialog(
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = personNotes,
+                        onValueChange = { personNotes = it },
+                        label = { Text("یادداشت مخاطب (اختیاری)") },
+                        placeholder = { Text("مثلاً دوست، همکار شرکت، فروشنده...") },
+                        leadingIcon = { Icon(Icons.Default.Notes, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("add_person_notes_input"),
+                        singleLine = true
+                    )
                 }
 
                 // 3. Bank Picker Dropdown
@@ -347,6 +371,19 @@ fun AddPersonAndCardDialog(
                         colors = navyFieldColors,
                         shape = RoundedCornerShape(14.dp),
                         modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = cardNotes,
+                        onValueChange = { cardNotes = it },
+                        label = { Text("یادداشت کارت (اختیاری)") },
+                        placeholder = { Text("مثلاً حساب حقوق، پس‌انداز، کارت خرید...") },
+                        leadingIcon = { Icon(Icons.Default.Notes, contentDescription = null, tint = Color(0xFF164D98)) },
+                        colors = navyFieldColors,
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("add_card_notes_input"),
                         singleLine = true
                     )
                 }
@@ -497,6 +534,39 @@ fun AddPersonAndCardDialog(
                             singleLine = true
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { isDefault = !isDefault }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = isDefault,
+                            onCheckedChange = { isDefault = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFFD97706)
+                            ),
+                            modifier = Modifier.testTag("add_card_default_checkbox")
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = if (isDefault) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = null,
+                            tint = if (isDefault) Color(0xFFD97706) else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "تنظیم به عنوان کارت پیش‌فرض این شخص",
+                            fontSize = 13.sp,
+                            fontWeight = if (isDefault) FontWeight.Bold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
                 // 9. Privacy Policy Notice
@@ -538,23 +608,27 @@ fun AddPersonAndCardDialog(
                         // Save Button (Navy Background)
                         Button(
                             onClick = {
-                                if (personName.isNotBlank() && cardNumber.length >= 16) {
+                                val normalizedNumber = IranianBankHelper.normalizeCardNumber(cardNumber)
+                                if (personName.isNotBlank() && normalizedNumber.length >= 16) {
                                     onSubmit(
                                         personName,
                                         personKind,
+                                        personNotes,
                                         selectedBank.name,
                                         selectedBank.typeKey,
-                                        cardNumber,
+                                        normalizedNumber,
                                         accountNumber,
                                         iban,
                                         cardKind,
                                         cvv2,
-                                        expiryDate
+                                        expiryDate,
+                                        cardNotes,
+                                        isDefault
                                     )
                                     onDismiss()
                                 }
                             },
-                            enabled = personName.isNotBlank() && cardNumber.length >= 16,
+                            enabled = personName.isNotBlank() && IranianBankHelper.normalizeCardNumber(cardNumber).length >= 16,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color(0xFF0A347A),
                                 contentColor = Color.White,

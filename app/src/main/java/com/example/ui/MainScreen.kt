@@ -92,10 +92,11 @@ fun MainScreen(viewModel: KartYarViewModel) {
                         AddPersonAndCardDialog(
                             initialPersonName = addDialogInitialPersonName,
                             onDismiss = { showAddDialog = false },
-                            onSubmit = { personName, personKind, bankName, bankType, cardNumber, accountNumber, iban, cardKind, cvv2, expiryDate ->
+                            onSubmit = { personName, personKind, personNotes, bankName, bankType, cardNumber, accountNumber, iban, cardKind, cvv2, expiryDate, cardNotes, isDefault ->
                                 viewModel.addPersonAndCard(
                                     personName = personName,
                                     personKind = personKind,
+                                    personNotes = personNotes,
                                     bankName = bankName,
                                     bankType = bankType,
                                     cardNumber = cardNumber,
@@ -103,7 +104,9 @@ fun MainScreen(viewModel: KartYarViewModel) {
                                     iban = iban,
                                     cardKind = cardKind,
                                     cvv2 = cvv2,
-                                    expiryDate = expiryDate
+                                    expiryDate = expiryDate,
+                                    cardNotes = cardNotes,
+                                    isDefault = isDefault
                                 )
                                 showAddDialog = false
                             }

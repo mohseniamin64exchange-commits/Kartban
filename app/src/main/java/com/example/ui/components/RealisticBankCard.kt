@@ -221,17 +221,37 @@ fun RealisticBankCard(
                             .border(1.dp, Color.White.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
                     )
 
-                    if (card.cardKind == "personal") {
-                        Surface(
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "کارت شخصی",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (card.isDefault) {
+                            Surface(
+                                color = Color(0xFFD97706),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "★ کارت اصلی",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        if (card.cardKind == "personal") {
+                            Surface(
+                                color = Color.White.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "کارت شخصی",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -367,6 +387,14 @@ fun RealisticBankCard(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
+                        if (card.notes.isNotBlank()) {
+                            Text(
+                                text = "یادداشت: ${card.notes}",
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontSize = 9.5.sp,
+                                maxLines = 1
+                            )
+                        }
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {

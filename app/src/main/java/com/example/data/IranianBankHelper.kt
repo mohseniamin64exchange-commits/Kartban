@@ -212,8 +212,20 @@ object IranianBankHelper {
             )
     }
 
+    fun normalizeCardNumber(raw: String): String {
+        val builder = StringBuilder()
+        for (ch in raw) {
+            when (ch) {
+                in '0'..'9' -> builder.append(ch)
+                in '۰'..'۹' -> builder.append(('0'.code + (ch.code - '۰'.code)).toChar())
+                in '٠'..'٩' -> builder.append(('0'.code + (ch.code - '٠'.code)).toChar())
+            }
+        }
+        return builder.toString()
+    }
+
     fun detectBankByCardNumber(cardNumber: String): BankMeta? {
-        val digits = cardNumber.filter { it.isDigit() }
+        val digits = normalizeCardNumber(cardNumber)
         if (digits.length < 6) return null
         val prefix6 = digits.take(6)
         return defaultBanks.firstOrNull { bank ->
@@ -222,7 +234,7 @@ object IranianBankHelper {
     }
 
     fun formatCardNumber(raw: String): String {
-        val digits = raw.filter { it.isDigit() }.take(16)
+        val digits = normalizeCardNumber(raw).take(16)
         return digits.chunked(4).joinToString("  ")
     }
 

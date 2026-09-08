@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
 import com.example.data.BankCardEntity
+import com.example.data.IranianBankHelper
 import com.example.data.KartYarRepository
 import com.example.data.PersonEntity
 import com.example.data.PersonWithCards
@@ -65,17 +66,22 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         repository.allPersonsWithCards,
         searchQuery
     ) { list, query ->
+        val sortedList = list.map { pwc ->
+            pwc.copy(cards = pwc.cards.sortedWith(compareByDescending<BankCardEntity> { it.isDefault }.thenByDescending { it.createdAt }))
+        }
         if (query.isBlank()) {
-            list
+            sortedList
         } else {
             val q = query.trim()
-            list.filter { item ->
+            sortedList.filter { item ->
                 item.person.name.contains(q, ignoreCase = true) ||
+                        item.person.notes.contains(q, ignoreCase = true) ||
                         item.cards.any { card ->
                             card.bankName.contains(q, ignoreCase = true) ||
                                     card.cardNumber.replace(" ", "").contains(q.replace(" ", ""), ignoreCase = true) ||
                                     card.iban.replace(" ", "").contains(q.replace(" ", ""), ignoreCase = true) ||
-                                    card.accountNumber.contains(q, ignoreCase = true)
+                                    card.accountNumber.contains(q, ignoreCase = true) ||
+                                    card.notes.contains(q, ignoreCase = true)
                         }
             }
         }
@@ -101,6 +107,7 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
     fun addPersonAndCard(
         personName: String,
         personKind: String,
+        personNotes: String = "",
         bankName: String,
         bankType: String,
         cardNumber: String,
@@ -108,22 +115,43 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         iban: String,
         cardKind: String,
         cvv2: String,
-        expiryDate: String
+        expiryDate: String,
+        cardNotes: String = "",
+        isDefault: Boolean = false
     ) {
         viewModelScope.launch {
+            val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
+            if (normalizedCard.isNotEmpty()) {
+                val existingCard = repository.findCardByNumber(normalizedCard)
+                if (existingCard != null) {
+                    val owner = repository.getPersonById(existingCard.personId)
+                    val ownerName = owner?.name ?: "مخاطب دیگری"
+                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
+                    return@launch
+                }
+            }
+
             // Find existing person with same name or create new
             val existing = personsWithCards.value.firstOrNull {
                 it.person.name.trim().equals(personName.trim(), ignoreCase = true)
             }
 
             val personId = if (existing != null) {
+                if (personNotes.isNotBlank() && existing.person.notes != personNotes) {
+                    repository.updatePerson(existing.person.copy(notes = personNotes))
+                }
                 existing.person.id
             } else {
                 val newPerson = PersonEntity(
                     name = personName.trim(),
-                    kind = personKind
+                    kind = personKind,
+                    notes = personNotes.trim()
                 )
                 repository.insertPerson(newPerson).toInt()
+            }
+
+            if (isDefault) {
+                repository.clearDefaultCardsForPerson(personId)
             }
 
             // Lock CVV2 and Expiry for customer cards
@@ -134,12 +162,14 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 personId = personId,
                 bankName = bankName,
                 bankType = bankType,
-                cardNumber = cardNumber.filter { it.isDigit() },
-                accountNumber = accountNumber.filter { it.isDigit() },
-                iban = iban.uppercase(),
+                cardNumber = normalizedCard,
+                accountNumber = IranianBankHelper.normalizeCardNumber(accountNumber),
+                iban = iban.uppercase().filter { it.isLetterOrDigit() },
                 cardKind = cardKind,
                 cvv2 = finalCvv2,
-                expiryDate = finalExpiry
+                expiryDate = finalExpiry,
+                isDefault = isDefault,
+                notes = cardNotes.trim()
             )
 
             repository.insertCard(card)
@@ -156,9 +186,26 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         iban: String,
         cardKind: String,
         cvv2: String,
-        expiryDate: String
+        expiryDate: String,
+        cardNotes: String = "",
+        isDefault: Boolean = false
     ) {
         viewModelScope.launch {
+            val normalizedCard = IranianBankHelper.normalizeCardNumber(cardNumber)
+            if (normalizedCard.isNotEmpty()) {
+                val existingCard = repository.findCardByNumber(normalizedCard)
+                if (existingCard != null) {
+                    val owner = repository.getPersonById(existingCard.personId)
+                    val ownerName = owner?.name ?: "مخاطب دیگری"
+                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است و نمی‌تواند تکراری باشد.")
+                    return@launch
+                }
+            }
+
+            if (isDefault) {
+                repository.clearDefaultCardsForPerson(personId)
+            }
+
             val finalCvv2 = if (cardKind == "personal") cvv2 else ""
             val finalExpiry = if (cardKind == "personal") expiryDate else ""
 
@@ -166,16 +213,66 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 personId = personId,
                 bankName = bankName,
                 bankType = bankType,
-                cardNumber = cardNumber.filter { it.isDigit() },
-                accountNumber = accountNumber.filter { it.isDigit() },
-                iban = iban.uppercase(),
+                cardNumber = normalizedCard,
+                accountNumber = IranianBankHelper.normalizeCardNumber(accountNumber),
+                iban = iban.uppercase().filter { it.isLetterOrDigit() },
                 cardKind = cardKind,
                 cvv2 = finalCvv2,
-                expiryDate = finalExpiry
+                expiryDate = finalExpiry,
+                isDefault = isDefault,
+                notes = cardNotes.trim()
             )
 
             repository.insertCard(card)
             showToast("کارت جدید اضافه شد")
+        }
+    }
+
+    fun updatePerson(person: PersonEntity) {
+        viewModelScope.launch {
+            repository.updatePerson(person)
+            showToast("مشخصات مخاطب به‌روزرسانی شد")
+        }
+    }
+
+    fun updateCard(card: BankCardEntity) {
+        viewModelScope.launch {
+            val normalizedCard = IranianBankHelper.normalizeCardNumber(card.cardNumber)
+            if (normalizedCard.isNotEmpty()) {
+                val existingCard = repository.findCardByNumber(normalizedCard)
+                if (existingCard != null && existingCard.id != card.id) {
+                    val owner = repository.getPersonById(existingCard.personId)
+                    val ownerName = owner?.name ?: "مخاطب دیگری"
+                    showToast("این شماره کارت قبلاً برای «$ownerName» ثبت شده است.")
+                    return@launch
+                }
+            }
+
+            if (card.isDefault) {
+                repository.clearDefaultCardsForPerson(card.personId)
+            }
+
+            val finalCvv2 = if (card.cardKind == "personal") card.cvv2 else ""
+            val finalExpiry = if (card.cardKind == "personal") card.expiryDate else ""
+
+            val updated = card.copy(
+                cardNumber = normalizedCard,
+                accountNumber = IranianBankHelper.normalizeCardNumber(card.accountNumber),
+                iban = card.iban.uppercase().filter { it.isLetterOrDigit() },
+                cvv2 = finalCvv2,
+                expiryDate = finalExpiry,
+                notes = card.notes.trim()
+            )
+
+            repository.updateCard(updated)
+            showToast("کارت با موفقیت ویرایش شد")
+        }
+    }
+
+    fun setDefaultCard(personId: Int, cardId: Int) {
+        viewModelScope.launch {
+            repository.setDefaultCard(personId, cardId)
+            showToast("کارت پیش‌فرض با موفقیت تغییر یافت")
         }
     }
 
@@ -210,7 +307,7 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
     private suspend fun seedSampleData() {
         // Seed initial sample data matching index.html & person-cards.html
-        val p1 = repository.insertPerson(PersonEntity(name = "علی رضایی", kind = "man")).toInt()
+        val p1 = repository.insertPerson(PersonEntity(name = "علی رضایی", kind = "man", notes = "دوست صمیمی")).toInt()
         repository.insertCard(
             BankCardEntity(
                 personId = p1,
@@ -221,7 +318,9 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 iban = "IR120170000000123456789001",
                 cardKind = "customer",
                 cardColorStart = "#80142A",
-                cardColorEnd = "#FF5B71"
+                cardColorEnd = "#FF5B71",
+                isDefault = true,
+                notes = "حساب حقوق و کارت اصلی"
             )
         )
         repository.insertCard(
@@ -234,7 +333,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 iban = "IR170170000000987654321001",
                 cardKind = "customer",
                 cardColorStart = "#071B58",
-                cardColorEnd = "#1D70C8"
+                cardColorEnd = "#1D70C8",
+                isDefault = false
             )
         )
         repository.insertCard(
@@ -247,7 +347,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 iban = "IR190170000000112233445501",
                 cardKind = "customer",
                 cardColorStart = "#045E7E",
-                cardColorEnd = "#19C3D9"
+                cardColorEnd = "#19C3D9",
+                isDefault = false
             )
         )
 
@@ -260,7 +361,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 cardNumber = "6104331122334455",
                 accountNumber = "5544332211",
                 iban = "IR330170000000554433221101",
-                cardKind = "customer"
+                cardKind = "customer",
+                isDefault = true
             )
         )
         repository.insertCard(
@@ -271,11 +373,12 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 cardNumber = "6219861098765432",
                 accountNumber = "7788990011",
                 iban = "IR440170000000778899001101",
-                cardKind = "customer"
+                cardKind = "customer",
+                isDefault = false
             )
         )
 
-        val p3 = repository.insertPerson(PersonEntity(name = "فروشگاه آفتاب", kind = "store")).toInt()
+        val p3 = repository.insertPerson(PersonEntity(name = "فروشگاه آفتاب", kind = "store", notes = "خرید لوازم تحریر")).toInt()
         repository.insertCard(
             BankCardEntity(
                 personId = p3,
@@ -284,7 +387,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 cardNumber = "5859831020304050",
                 accountNumber = "302010",
                 iban = "IR550170000000302010000001",
-                cardKind = "customer"
+                cardKind = "customer",
+                isDefault = true
             )
         )
 
@@ -297,7 +401,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 cardNumber = "5022291011121314",
                 accountNumber = "800900",
                 iban = "IR660170000000800900000001",
-                cardKind = "customer"
+                cardKind = "customer",
+                isDefault = true
             )
         )
     }

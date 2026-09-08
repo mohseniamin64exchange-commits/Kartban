@@ -319,11 +319,31 @@ fun PersonRowItem(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = "${item.cards.size} کارت بانکی",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${item.cards.size} کارت بانکی",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        val defaultCard = item.cards.firstOrNull { it.isDefault }
+                        if (defaultCard != null) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "★ ${defaultCard.bankName}",
+                                fontSize = 11.sp,
+                                color = Color(0xFFD97706),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    if (item.person.notes.isNotBlank()) {
+                        Text(
+                            text = item.person.notes,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 

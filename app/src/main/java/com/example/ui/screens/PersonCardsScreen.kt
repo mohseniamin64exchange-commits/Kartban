@@ -2,7 +2,9 @@ package com.example.ui.screens
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +25,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -34,6 +43,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +53,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -51,8 +62,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BankCardEntity
+import com.example.data.PersonEntity
 import com.example.ui.KartYarViewModel
 import com.example.ui.components.AvatarView
+import com.example.ui.components.EditCardDialog
+import com.example.ui.components.EditPersonDialog
 import com.example.ui.components.RealisticBankCard
 import com.example.ui.components.RectangularBankLogo
 import com.example.ui.components.ShareOptionsModal
@@ -70,6 +84,11 @@ fun PersonCardsScreen(
     val context = LocalContext.current
     val selectedCardIds = remember { mutableStateListOf<Int>() }
     var showShareModal by remember { mutableStateOf(false) }
+
+    var showEditPersonDialog by remember { mutableStateOf(false) }
+    var cardToEdit by remember { mutableStateOf<BankCardEntity?>(null) }
+    var showDeletePersonConfirm by remember { mutableStateOf(false) }
+    var cardToDelete by remember { mutableStateOf<BankCardEntity?>(null) }
 
     if (personWithCards == null) {
         Box(
@@ -165,17 +184,28 @@ fun PersonCardsScreen(
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                viewModel.deletePerson(person)
-                                onBack()
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { showEditPersonDialog = true },
+                                modifier = Modifier.testTag("edit_person_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "ویرایش مخاطب",
+                                    tint = Color.White
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Person",
-                                tint = Color.White.copy(alpha = 0.8f)
-                            )
+
+                            IconButton(
+                                onClick = { showDeletePersonConfirm = true },
+                                modifier = Modifier.testTag("delete_person_btn")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "حذف مخاطب",
+                                    tint = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
 
@@ -200,6 +230,32 @@ fun PersonCardsScreen(
                                 color = Color(0xFFD4E1F6),
                                 fontSize = 13.sp
                             )
+
+                            if (person.notes.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Surface(
+                                    color = Color.White.copy(alpha = 0.18f),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Notes,
+                                            contentDescription = null,
+                                            tint = Color(0xFF9DC6FF),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = person.notes,
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
@@ -238,27 +294,130 @@ fun PersonCardsScreen(
                     items(cards, key = { it.id }) { card ->
                         val isSelected = selectedCardIds.contains(card.id)
 
-                        RealisticBankCard(
-                            card = card,
-                            personName = person.name,
-                            isSelected = isSelected,
-                            onToggleSelect = { checked ->
-                                if (checked) {
-                                    if (!selectedCardIds.contains(card.id)) selectedCardIds.add(card.id)
-                                } else {
-                                    selectedCardIds.remove(card.id)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            RealisticBankCard(
+                                card = card,
+                                personName = person.name,
+                                isSelected = isSelected,
+                                onToggleSelect = { checked ->
+                                    if (checked) {
+                                        if (!selectedCardIds.contains(card.id)) selectedCardIds.add(card.id)
+                                    } else {
+                                        selectedCardIds.remove(card.id)
+                                    }
+                                },
+                                onCopyIban = { iban ->
+                                    viewModel.copyToClipboard("IBAN", iban, "شماره شبا کپی شد")
+                                },
+                                onCopyCardNumber = { cardNumber ->
+                                    viewModel.copyToClipboard("Card Number", cardNumber, "شماره کارت کپی شد")
+                                },
+                                onCopyAccountNumber = { accNumber ->
+                                    viewModel.copyToClipboard("Account Number", accNumber, "شماره حساب کپی شد")
                                 }
-                            },
-                            onCopyIban = { iban ->
-                                viewModel.copyToClipboard("IBAN", iban, "شماره شبا کپی شد")
-                            },
-                            onCopyCardNumber = { cardNumber ->
-                                viewModel.copyToClipboard("Card Number", cardNumber, "شماره کارت کپی شد")
-                            },
-                            onCopyAccountNumber = { accNumber ->
-                                viewModel.copyToClipboard("Account Number", accNumber, "شماره حساب کپی شد")
+                            )
+
+                            // Card Action Bar: Default Star / Edit / Delete
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Default Card Toggle / Indicator
+                                    if (card.isDefault) {
+                                        Surface(
+                                            color = Color(0xFFD97706).copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Star,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFFD97706),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "کارت پیش‌فرض",
+                                                    color = Color(0xFFD97706),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        Row(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable { viewModel.setDefaultCard(person.id, card.id) }
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.StarBorder,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "تنظیم به عنوان پیش‌فرض",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
+
+                                    // Action Buttons: Edit and Delete
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        IconButton(
+                                            onClick = { cardToEdit = card },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("edit_card_btn_${card.id}")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "ویرایش کارت",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { cardToDelete = card },
+                                            modifier = Modifier
+                                                .size(36.dp)
+                                                .testTag("delete_card_btn_${card.id}")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "حذف کارت",
+                                                tint = Color(0xFFDC2626),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+                                }
                             }
-                        )
+                        }
                     }
 
                     item {
@@ -278,6 +437,83 @@ fun PersonCardsScreen(
             onDismiss = { showShareModal = false },
             onShowToast = { msg ->
                 viewModel.copyToClipboard("Share", "", msg)
+            }
+        )
+    }
+
+    // Edit Person Dialog
+    if (showEditPersonDialog) {
+        EditPersonDialog(
+            person = person,
+            onDismiss = { showEditPersonDialog = false },
+            onSubmit = { updatedPerson ->
+                viewModel.updatePerson(updatedPerson)
+                showEditPersonDialog = false
+            }
+        )
+    }
+
+    // Edit Card Dialog
+    cardToEdit?.let { card ->
+        EditCardDialog(
+            card = card,
+            personName = person.name,
+            onDismiss = { cardToEdit = null },
+            onSubmit = { updatedCard ->
+                viewModel.updateCard(updatedCard)
+                cardToEdit = null
+            }
+        )
+    }
+
+    // Delete Person Confirmation Dialog
+    if (showDeletePersonConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeletePersonConfirm = false },
+            title = { Text("حذف مخاطب", fontWeight = FontWeight.Bold) },
+            text = { Text("آیا از حذف «${person.name}» و تمامی کارت‌های آن اطمینان دارید؟ این عملیات قابل بازگشت نیست.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deletePerson(person)
+                        showDeletePersonConfirm = false
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("حذف", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeletePersonConfirm = false }) {
+                    Text("انصراف")
+                }
+            }
+        )
+    }
+
+    // Delete Card Confirmation Dialog
+    cardToDelete?.let { card ->
+        AlertDialog(
+            onDismissRequest = { cardToDelete = null },
+            title = { Text("حذف کارت بانکی", fontWeight = FontWeight.Bold) },
+            text = { Text("آیا از حذف کارت ${card.bankName} به شماره ${card.cardNumber} اطمینان دارید؟") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        selectedCardIds.remove(card.id)
+                        viewModel.deleteCard(card)
+                        cardToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("حذف", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { cardToDelete = null }) {
+                    Text("انصراف")
+                }
             }
         )
     }
