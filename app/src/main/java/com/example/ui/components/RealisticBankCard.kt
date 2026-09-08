@@ -225,6 +225,21 @@ fun RealisticBankCard(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        if (card.isPinned) {
+                            Surface(
+                                color = Color(0xFFD97706).copy(alpha = 0.9f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "📌 سنجاق",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
                         if (card.isDefault) {
                             Surface(
                                 color = Color(0xFFD97706),

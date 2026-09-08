@@ -10,5 +10,6 @@ data class PersonEntity(
     val name: String,
     val kind: String = "man", // "man", "woman", "store", "company"
     val notes: String = "",
+    val isPinned: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

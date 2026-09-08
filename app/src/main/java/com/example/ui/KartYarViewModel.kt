@@ -10,7 +10,10 @@ import com.example.data.AppDatabase
 import com.example.data.BankCardEntity
 import com.example.data.IranianBankHelper
 import com.example.data.KartYarRepository
+import com.example.data.CardGroupFilter
+import com.example.data.KartFilterAndSortHelper
 import com.example.data.PersonEntity
+import com.example.data.PersonSortOption
 import com.example.data.PersonWithCards
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +33,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
     val searchQuery = MutableStateFlow("")
     val isDarkMode = MutableStateFlow(false)
     val selectedPersonId = MutableStateFlow<Int?>(null)
+    val sortOption = MutableStateFlow(PersonSortOption.PINNED_FIRST)
+    val groupFilter = MutableStateFlow(CardGroupFilter.ALL)
 
     private val _toastEvent = MutableStateFlow<UiToastEvent?>(null)
     val toastEvent: StateFlow<UiToastEvent?> = _toastEvent
@@ -64,32 +69,24 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
 
     val personsWithCards: StateFlow<List<PersonWithCards>> = combine(
         repository.allPersonsWithCards,
-        searchQuery
-    ) { list, query ->
-        val sortedList = list.map { pwc ->
-            pwc.copy(cards = pwc.cards.sortedWith(compareByDescending<BankCardEntity> { it.isDefault }.thenByDescending { it.createdAt }))
-        }
-        if (query.isBlank()) {
-            sortedList
-        } else {
-            val q = query.trim()
-            sortedList.filter { item ->
-                item.person.name.contains(q, ignoreCase = true) ||
-                        item.person.notes.contains(q, ignoreCase = true) ||
-                        item.cards.any { card ->
-                            card.bankName.contains(q, ignoreCase = true) ||
-                                    card.cardNumber.replace(" ", "").contains(q.replace(" ", ""), ignoreCase = true) ||
-                                    card.iban.replace(" ", "").contains(q.replace(" ", ""), ignoreCase = true) ||
-                                    card.accountNumber.contains(q, ignoreCase = true) ||
-                                    card.notes.contains(q, ignoreCase = true)
-                        }
-            }
-        }
+        searchQuery,
+        sortOption,
+        groupFilter
+    ) { list, query, sort, group ->
+        KartFilterAndSortHelper.filterAndSort(list, query, sort, group)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    fun setSortOption(option: PersonSortOption) {
+        sortOption.value = option
+    }
+
+    fun setGroupFilter(filter: CardGroupFilter) {
+        groupFilter.value = filter
+    }
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
@@ -306,6 +303,60 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun togglePersonPinned(person: PersonEntity) {
+        viewModelScope.launch {
+            val newPinned = !person.isPinned
+            repository.setPersonPinned(person.id, newPinned)
+            showToast(if (newPinned) "مخاطب سنجاق شد" else "سنجاق مخاطب برداشته شد")
+        }
+    }
+
+    fun toggleCardPinned(card: BankCardEntity) {
+        viewModelScope.launch {
+            val newPinned = !card.isPinned
+            repository.setCardPinned(card.id, newPinned)
+            showToast(if (newPinned) "کارت سنجاق شد" else "سنجاق کارت برداشته شد")
+        }
+    }
+
+    fun moveCardUp(personId: Int, cardId: Int) {
+        viewModelScope.launch {
+            val personWithCards = repository.getPersonWithCardsById(personId).first() ?: return@launch
+            val sorted = KartFilterAndSortHelper.sortCards(personWithCards.cards).toMutableList()
+            val index = sorted.indexOfFirst { it.id == cardId }
+            if (index > 0) {
+                val current = sorted[index]
+                val prev = sorted[index - 1]
+                sorted.forEachIndexed { i, c ->
+                    if (c.orderIndex != i) {
+                        repository.updateCardOrderIndex(c.id, i)
+                    }
+                }
+                repository.swapCardOrders(current.id, index, prev.id, index - 1)
+                showToast("ترتیب کارت تغییر یافت")
+            }
+        }
+    }
+
+    fun moveCardDown(personId: Int, cardId: Int) {
+        viewModelScope.launch {
+            val personWithCards = repository.getPersonWithCardsById(personId).first() ?: return@launch
+            val sorted = KartFilterAndSortHelper.sortCards(personWithCards.cards).toMutableList()
+            val index = sorted.indexOfFirst { it.id == cardId }
+            if (index >= 0 && index < sorted.size - 1) {
+                val current = sorted[index]
+                val next = sorted[index + 1]
+                sorted.forEachIndexed { i, c ->
+                    if (c.orderIndex != i) {
+                        repository.updateCardOrderIndex(c.id, i)
+                    }
+                }
+                repository.swapCardOrders(current.id, index, next.id, index + 1)
+                showToast("ترتیب کارت تغییر یافت")
+            }
+        }
+    }
+
     fun deleteCard(card: BankCardEntity) {
         viewModelScope.launch {
             repository.deleteCard(card)
@@ -433,6 +484,26 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 iban = "IR660170000000800900000001",
                 cardKind = "customer",
                 isDefault = true
+            )
+        )
+
+        val p5 = repository.insertPerson(PersonEntity(name = "کارت‌های شخصی من", kind = "man", notes = "کارت‌های شخصی خودم", isPinned = true)).toInt()
+        repository.insertCard(
+            BankCardEntity(
+                personId = p5,
+                bankName = "بلوبانک",
+                bankType = "blubank",
+                cardNumber = "6219861234567890",
+                accountNumber = "99887766",
+                iban = "IR770170000000998877660001",
+                cardKind = "personal",
+                cvv2 = "345",
+                expiryDate = "06/28",
+                cardColorStart = "#1D4ED8",
+                cardColorEnd = "#3B82F6",
+                isDefault = true,
+                isPinned = true,
+                notes = "کارت اصلی خرید اینترنتی"
             )
         )
     }

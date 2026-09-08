@@ -37,6 +37,15 @@ class KartYarRepository(private val dao: KartYarDao) {
 
     suspend fun clearDefaultCardsForPerson(personId: Int) = dao.clearDefaultCardsForPerson(personId)
 
+    suspend fun setPersonPinned(personId: Int, isPinned: Boolean) = dao.setPersonPinned(personId, isPinned)
+
+    suspend fun setCardPinned(cardId: Int, isPinned: Boolean) = dao.setCardPinned(cardId, isPinned)
+
+    suspend fun updateCardOrderIndex(cardId: Int, orderIndex: Int) = dao.updateCardOrderIndex(cardId, orderIndex)
+
+    suspend fun swapCardOrders(card1Id: Int, order1: Int, card2Id: Int, order2: Int) =
+        dao.swapCardOrders(card1Id, order1, card2Id, order2)
+
     suspend fun getCardById(cardId: Int): BankCardEntity? = dao.getCardById(cardId)
 
     suspend fun getPersonById(personId: Int): PersonEntity? = dao.getPersonById(personId)

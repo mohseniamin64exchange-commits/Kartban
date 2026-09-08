@@ -18,18 +18,22 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notes
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -62,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BankCardEntity
+import com.example.data.KartFilterAndSortHelper
 import com.example.data.PersonEntity
 import com.example.ui.KartYarViewModel
 import com.example.ui.components.AvatarView
@@ -101,7 +106,7 @@ fun PersonCardsScreen(
     }
 
     val person = personWithCards.person
-    val cards = personWithCards.cards
+    val cards = remember(personWithCards.cards) { KartFilterAndSortHelper.sortCards(personWithCards.cards) }
 
     Scaffold(
         floatingActionButtonPosition = androidx.compose.material3.FabPosition.Start,
@@ -186,6 +191,17 @@ fun PersonCardsScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(
+                                onClick = { viewModel.togglePersonPinned(person) },
+                                modifier = Modifier.testTag("pin_person_detail_btn")
+                            ) {
+                                Icon(
+                                    imageVector = if (person.isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                                    contentDescription = if (person.isPinned) "برداشتن سنجاق" else "سنجاق کردن مخاطب",
+                                    tint = if (person.isPinned) Color(0xFFFBBF24) else Color.White
+                                )
+                            }
+
+                            IconButton(
                                 onClick = { showEditPersonDialog = true },
                                 modifier = Modifier.testTag("edit_person_btn")
                             ) {
@@ -219,12 +235,23 @@ fun PersonCardsScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             AvatarView(kind = person.kind, size = 64.dp)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = person.name,
-                                color = Color.White,
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = person.name,
+                                    color = Color.White,
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (person.isPinned) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.PushPin,
+                                        contentDescription = "سنجاق شده",
+                                        tint = Color(0xFFFBBF24),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                             Text(
                                 text = "${cards.size} کارت بانکی",
                                 color = Color(0xFFD4E1F6),
@@ -291,7 +318,7 @@ fun PersonCardsScreen(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(cards, key = { it.id }) { card ->
+                    itemsIndexed(cards, key = { _, card -> card.id }) { index, card ->
                         val isSelected = selectedCardIds.contains(card.id)
 
                         Column(
@@ -320,7 +347,7 @@ fun PersonCardsScreen(
                                 }
                             )
 
-                            // Card Action Bar: Default Star / Edit / Delete
+                            // Card Action Bar: Default Star / Pin / Move / Edit / Delete
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
@@ -382,15 +409,62 @@ fun PersonCardsScreen(
                                         }
                                     }
 
-                                    // Action Buttons: Edit and Delete
+                                    // Action Buttons: Pin, Move Up, Move Down, Edit, and Delete
                                     Row(
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        // Pin card button
+                                        IconButton(
+                                            onClick = { viewModel.toggleCardPinned(card) },
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .testTag("pin_card_btn_${card.id}")
+                                        ) {
+                                            Icon(
+                                                imageVector = if (card.isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                                                contentDescription = if (card.isPinned) "برداشتن سنجاق کارت" else "سنجاق کردن کارت",
+                                                tint = if (card.isPinned) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        // Move Up button
+                                        IconButton(
+                                            onClick = { viewModel.moveCardUp(person.id, card.id) },
+                                            enabled = index > 0,
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .testTag("move_card_up_btn_${card.id}")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowUpward,
+                                                contentDescription = "انتقال به بالا",
+                                                tint = if (index > 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
+                                        // Move Down button
+                                        IconButton(
+                                            onClick = { viewModel.moveCardDown(person.id, card.id) },
+                                            enabled = index < cards.lastIndex,
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .testTag("move_card_down_btn_${card.id}")
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowDownward,
+                                                contentDescription = "انتقال به پایین",
+                                                tint = if (index < cards.lastIndex) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+
                                         IconButton(
                                             onClick = { cardToEdit = card },
                                             modifier = Modifier
-                                                .size(36.dp)
+                                                .size(34.dp)
                                                 .testTag("edit_card_btn_${card.id}")
                                         ) {
                                             Icon(
@@ -404,7 +478,7 @@ fun PersonCardsScreen(
                                         IconButton(
                                             onClick = { cardToDelete = card },
                                             modifier = Modifier
-                                                .size(36.dp)
+                                                .size(34.dp)
                                                 .testTag("delete_card_btn_${card.id}")
                                         ) {
                                             Icon(

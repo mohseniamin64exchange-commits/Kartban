@@ -22,14 +22,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +49,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +61,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.CardGroupFilter
+import com.example.data.PersonSortOption
 import com.example.data.PersonWithCards
 import com.example.ui.KartYarViewModel
 import com.example.ui.components.AvatarView
@@ -67,6 +79,8 @@ fun HomeScreen(
     val isDarkMode by viewModel.isDarkMode.collectAsState()
     val totalPersons by viewModel.totalPersonCount.collectAsState()
     val totalCards by viewModel.totalCardCount.collectAsState()
+    val sortOption by viewModel.sortOption.collectAsState()
+    val groupFilter by viewModel.groupFilter.collectAsState()
 
     Scaffold(
         floatingActionButtonPosition = androidx.compose.material3.FabPosition.Start,
@@ -164,6 +178,16 @@ fun HomeScreen(
                         onValueChange = { viewModel.onSearchQueryChange(it) },
                         placeholder = { Text("جستجوی نام، شماره کارت یا شبا", color = Color(0xFFAAB8D0), fontSize = 13.sp) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF9EB4DA)) },
+                        trailingIcon = if (searchQuery.isNotBlank()) {
+                            {
+                                IconButton(
+                                    onClick = { viewModel.onSearchQueryChange("") },
+                                    modifier = Modifier.testTag("clear_search_btn")
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "پاک کردن جستجو", tint = Color.White)
+                                }
+                            }
+                        } else null,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Color.White.copy(alpha = 0.12f),
@@ -179,7 +203,102 @@ fun HomeScreen(
                             .testTag("home_search_input")
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Group Filters & Sort Dropdown Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Group Filter Chips
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CardGroupFilter.values().forEach { filter ->
+                                val isSelected = groupFilter == filter
+                                Surface(
+                                    onClick = { viewModel.setGroupFilter(filter) },
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.15f),
+                                    modifier = Modifier.testTag("filter_tab_${filter.name}")
+                                ) {
+                                    Text(
+                                        text = filter.title,
+                                        color = if (isSelected) Color(0xFF0A347A) else Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Sort Dropdown Button
+                        var sortMenuExpanded by remember { mutableStateOf(false) }
+                        Box {
+                            Surface(
+                                onClick = { sortMenuExpanded = true },
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White.copy(alpha = 0.15f),
+                                modifier = Modifier.testTag("sort_menu_button")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Sort,
+                                        contentDescription = "مرتب‌سازی",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = sortOption.title,
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = sortMenuExpanded,
+                                onDismissRequest = { sortMenuExpanded = false }
+                            ) {
+                                PersonSortOption.values().forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = option.title, fontSize = 13.sp)
+                                                if (sortOption == option) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        onClick = {
+                                            viewModel.setSortOption(option)
+                                            sortMenuExpanded = false
+                                        },
+                                        modifier = Modifier.testTag("sort_option_${option.name}")
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Stats Banner (Total Contacts & Total Cards)
                     Surface(
@@ -275,7 +394,8 @@ fun HomeScreen(
                     items(personsWithCards, key = { it.person.id }) { item ->
                         PersonRowItem(
                             item = item,
-                            onClick = { onOpenPersonCards(item.person.id) }
+                            onClick = { onOpenPersonCards(item.person.id) },
+                            onTogglePin = { viewModel.togglePersonPinned(item.person) }
                         )
                     }
                     item {
@@ -290,7 +410,8 @@ fun HomeScreen(
 @Composable
 fun PersonRowItem(
     item: PersonWithCards,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onTogglePin: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -309,16 +430,30 @@ fun PersonRowItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Right Section (Child 0 in RTL): Avatar, Name & Card Count
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f, fill = false)
+            ) {
                 AvatarView(kind = item.person.kind, size = 48.dp)
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Column(horizontalAlignment = Alignment.Start) {
-                    Text(
-                        text = item.person.name,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = item.person.name,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (item.person.isPinned) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.PushPin,
+                                contentDescription = "سنجاق شده",
+                                tint = Color(0xFFD97706),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "${item.cards.size} کارت بانکی",
@@ -347,8 +482,22 @@ fun PersonRowItem(
                 }
             }
 
-            // Left Section (Child 1 in RTL): Rectangular Bank Badges & Chevron
+            // Left Section (Child 1 in RTL): Pin button, Rectangular Bank Badges & Chevron
             Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onTogglePin,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .testTag("pin_person_btn_${item.person.id}")
+                ) {
+                    Icon(
+                        imageVector = if (item.person.isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                        contentDescription = if (item.person.isPinned) "برداشتن سنجاق" else "سنجاق کردن مخاطب",
+                        tint = if (item.person.isPinned) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
                 // Display up to 3 bank logos
                 val distinctBanks = item.cards.map { it.bankType.ifEmpty { it.bankName } }.distinct().take(3)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -370,7 +519,7 @@ fun PersonRowItem(
                     }
                 }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = null,

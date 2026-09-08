@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface KartYarDao {
     @Transaction
-    @Query("SELECT * FROM persons ORDER BY createdAt DESC")
+    @Query("SELECT * FROM persons ORDER BY isPinned DESC, createdAt DESC")
     fun getAllPersonsWithCards(): Flow<List<PersonWithCards>>
 
     @Transaction
     @Query("SELECT * FROM persons WHERE id = :personId")
     fun getPersonWithCardsById(personId: Int): Flow<PersonWithCards?>
 
-    @Query("SELECT * FROM bank_cards WHERE personId = :personId ORDER BY isDefault DESC, createdAt DESC")
+    @Query("SELECT * FROM bank_cards WHERE personId = :personId ORDER BY isDefault DESC, isPinned DESC, orderIndex ASC, createdAt DESC")
     fun getCardsForPerson(personId: Int): Flow<List<BankCardEntity>>
 
     @Query("SELECT * FROM bank_cards WHERE id = :cardId LIMIT 1")
@@ -41,6 +41,21 @@ interface KartYarDao {
     suspend fun setDefaultCard(personId: Int, cardId: Int) {
         clearDefaultCardsForPerson(personId)
         setCardAsDefault(cardId)
+    }
+
+    @Query("UPDATE persons SET isPinned = :isPinned WHERE id = :personId")
+    suspend fun setPersonPinned(personId: Int, isPinned: Boolean)
+
+    @Query("UPDATE bank_cards SET isPinned = :isPinned WHERE id = :cardId")
+    suspend fun setCardPinned(cardId: Int, isPinned: Boolean)
+
+    @Query("UPDATE bank_cards SET orderIndex = :orderIndex WHERE id = :cardId")
+    suspend fun updateCardOrderIndex(cardId: Int, orderIndex: Int)
+
+    @Transaction
+    suspend fun swapCardOrders(card1Id: Int, order1: Int, card2Id: Int, order2: Int) {
+        updateCardOrderIndex(card1Id, order2)
+        updateCardOrderIndex(card2Id, order1)
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

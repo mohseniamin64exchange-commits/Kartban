@@ -32,6 +32,8 @@ data class BankCardEntity(
     val cardColorStart: String = "#80142A",
     val cardColorEnd: String = "#FF5B71",
     val isDefault: Boolean = false,
+    val isPinned: Boolean = false,
+    val orderIndex: Int = 0,
     val notes: String = "",
     val createdAt: Long = System.currentTimeMillis()
 )
