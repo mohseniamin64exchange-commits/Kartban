@@ -84,10 +84,10 @@ class CardAppearanceTest {
     fun testHexColorValidation() {
         assertTrue(CardAppearanceHelper.isValidHexColor("#1E3A8A"))
         assertTrue(CardAppearanceHelper.isValidHexColor("1E3A8A"))
-        assertTrue(CardAppearanceHelper.isValidHexColor("#FFF"))
         assertTrue(CardAppearanceHelper.isValidHexColor("#FF1E3A8A"))
         assertTrue(CardAppearanceHelper.isValidHexColor("045E7E"))
 
+        assertFalse(CardAppearanceHelper.isValidHexColor("#FFF"))
         assertFalse(CardAppearanceHelper.isValidHexColor(""))
         assertFalse(CardAppearanceHelper.isValidHexColor("#"))
         assertFalse(CardAppearanceHelper.isValidHexColor("12"))
