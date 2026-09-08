@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BankCardEntity
+import com.example.data.CardImageGenerator
 import com.example.data.IranianBankHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,6 +93,19 @@ fun ShareOptionsModal(
             putExtra(Intent.EXTRA_TEXT, shareText)
         }
         context.startActivity(Intent.createChooser(intent, "اشتراک‌گذاری اطلاعات کارت"))
+        onDismiss()
+    }
+
+    fun shareImage() {
+        val cardToShare = selectedCards.firstOrNull()
+        if (cardToShare != null) {
+            val success = CardImageGenerator.shareCardImage(context, cardToShare, personName)
+            if (success) {
+                onShowToast("تصویر کارت برای اشتراک‌گذاری آماده شد")
+            } else {
+                onShowToast("خطا در ایجاد تصویر کارت")
+            }
+        }
         onDismiss()
     }
 
@@ -180,6 +195,41 @@ fun ShareOptionsModal(
                         Text(text = "ارسال به پیام‌رسان‌ها (تلگرام، بله، واتساپ)", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         Text(
                             text = "ارسال متن کامل مشخصات کارت به برنامه‌ها",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // 3. Graphic Card Image Share Option (uses customized colors)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { shareImage() }
+                    .testTag("share_card_image_btn"),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFF7C3AED),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Image, contentDescription = null, tint = Color.White)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(text = "ارسال تصویر گرافیکی کارت", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text(
+                            text = "با رنگ، طرح و هویت بصری کارت (شخصی یا بانک)",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

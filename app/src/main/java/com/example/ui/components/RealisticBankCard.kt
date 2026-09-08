@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.BankCardEntity
+import com.example.data.CardAppearanceHelper
 import com.example.data.IranianBankHelper
 
 @Composable
@@ -62,6 +63,14 @@ fun RealisticBankCard(
 ) {
     val meta = remember(card.bankType, card.bankName) {
         IranianBankHelper.getBankMetaByType(card.bankType.ifEmpty { card.bankName })
+    }
+    val (cardStartColor, cardEndColor) = remember(
+        card.useCustomAppearance,
+        card.cardColorStart,
+        card.cardColorEnd,
+        meta
+    ) {
+        CardAppearanceHelper.getEffectiveColors(card, meta)
     }
 
     Card(
@@ -86,7 +95,7 @@ fun RealisticBankCard(
                 .fillMaxSize()
                 .background(
                     brush = Brush.linearGradient(
-                        colors = listOf(meta.colorStart, meta.colorEnd)
+                        colors = listOf(cardStartColor, cardEndColor)
                     )
                 )
         ) {
@@ -262,6 +271,20 @@ fun RealisticBankCard(
                             ) {
                                 Text(
                                     text = "کارت شخصی",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        if (card.useCustomAppearance) {
+                            Surface(
+                                color = Color.White.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = "🎨 رنگ شخصی",
                                     color = Color.White,
                                     fontSize = 10.sp,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)

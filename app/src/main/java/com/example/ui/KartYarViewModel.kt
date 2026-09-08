@@ -429,6 +429,7 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 cardKind = "customer",
                 cardColorStart = "#045E7E",
                 cardColorEnd = "#19C3D9",
+                useCustomAppearance = true,
                 isDefault = false
             )
         )
@@ -501,6 +502,7 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
                 expiryDate = "06/28",
                 cardColorStart = "#1D4ED8",
                 cardColorEnd = "#3B82F6",
+                useCustomAppearance = true,
                 isDefault = true,
                 isPinned = true,
                 notes = "کارت اصلی خرید اینترنتی"
