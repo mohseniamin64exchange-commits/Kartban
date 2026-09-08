@@ -81,4 +81,19 @@ interface KartYarDao {
 
     @Query("SELECT COUNT(*) FROM bank_cards")
     fun getCardCount(): Flow<Int>
+
+    @Query("SELECT * FROM persons")
+    suspend fun getAllPersonsList(): List<PersonEntity>
+
+    @Query("SELECT * FROM bank_cards")
+    suspend fun getAllCardsList(): List<BankCardEntity>
+
+    @Query("SELECT * FROM persons WHERE name = :name LIMIT 1")
+    suspend fun findPersonByName(name: String): PersonEntity?
+
+    @Query("DELETE FROM bank_cards WHERE id IN (:cardIds)")
+    suspend fun deleteCardsByIds(cardIds: List<Int>)
+
+    @Query("DELETE FROM persons WHERE id IN (:personIds)")
+    suspend fun deletePersonsByIds(personIds: List<Int>)
 }

@@ -75,6 +75,8 @@ import com.example.ui.components.EditPersonDialog
 import com.example.ui.components.RealisticBankCard
 import com.example.ui.components.RectangularBankLogo
 import com.example.ui.components.ShareOptionsModal
+import com.example.ui.components.ShowQrCodeDialog
+import androidx.compose.material.icons.filled.SelectAll
 
 @Composable
 fun PersonCardsScreen(
@@ -89,6 +91,8 @@ fun PersonCardsScreen(
     val context = LocalContext.current
     val selectedCardIds = remember { mutableStateListOf<Int>() }
     var showShareModal by remember { mutableStateOf(false) }
+    var showQrCodeDialog by remember { mutableStateOf(false) }
+    var showBatchDeleteCardsConfirm by remember { mutableStateOf(false) }
 
     var showEditPersonDialog by remember { mutableStateOf(false) }
     var cardToEdit by remember { mutableStateOf<BankCardEntity?>(null) }
@@ -130,7 +134,7 @@ fun PersonCardsScreen(
                     modifier = Modifier.testTag("add_card_to_person_fab")
                 )
 
-                // 2. Share Selected Cards FAB (Left side in RTL, permanently visible with dynamic count)
+                // 2. Share Selected Cards FAB
                 val count = selectedCardIds.size
                 ExtendedFloatingActionButton(
                     onClick = {
@@ -151,6 +155,17 @@ fun PersonCardsScreen(
                     containerColor = if (count > 0) Color(0xFF1475E8) else Color(0xFF1475E8).copy(alpha = 0.7f),
                     modifier = Modifier.testTag("share_selected_cards_fab")
                 )
+
+                // 3. Delete Selected Cards FAB (Visible when cards are selected)
+                if (count > 0) {
+                    FloatingActionButton(
+                        onClick = { showBatchDeleteCardsConfirm = true },
+                        containerColor = Color(0xFFDC2626),
+                        modifier = Modifier.testTag("delete_selected_cards_fab")
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "حذف کارت‌های انتخاب‌شده", tint = Color.White)
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -511,6 +526,48 @@ fun PersonCardsScreen(
             onDismiss = { showShareModal = false },
             onShowToast = { msg ->
                 viewModel.copyToClipboard("Share", "", msg)
+            },
+            onShareQr = {
+                showQrCodeDialog = true
+            }
+        )
+    }
+
+    // QR Code Dialog
+    if (showQrCodeDialog) {
+        val selectedCards = cards.filter { selectedCardIds.contains(it.id) }
+        ShowQrCodeDialog(
+            person = person,
+            cards = selectedCards,
+            onDismiss = { showQrCodeDialog = false }
+        )
+    }
+
+    // Batch Delete Cards Confirmation Dialog
+    if (showBatchDeleteCardsConfirm) {
+        val count = selectedCardIds.size
+        AlertDialog(
+            onDismissRequest = { showBatchDeleteCardsConfirm = false },
+            title = { Text("حذف کارت‌های انتخاب‌شده", fontWeight = FontWeight.Bold) },
+            text = { Text("آیا از حذف $count کارت انتخاب‌شده اطمینان دارید؟") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.selectedCardIds.value = selectedCardIds.toSet()
+                        viewModel.deleteSelectedCards {
+                            selectedCardIds.clear()
+                        }
+                        showBatchDeleteCardsConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("حذف شوند", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBatchDeleteCardsConfirm = false }) {
+                    Text("انصراف")
+                }
             }
         )
     }

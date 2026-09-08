@@ -49,4 +49,14 @@ class KartYarRepository(private val dao: KartYarDao) {
     suspend fun getCardById(cardId: Int): BankCardEntity? = dao.getCardById(cardId)
 
     suspend fun getPersonById(personId: Int): PersonEntity? = dao.getPersonById(personId)
+
+    suspend fun getAllPersonsList(): List<PersonEntity> = dao.getAllPersonsList()
+
+    suspend fun getAllCardsList(): List<BankCardEntity> = dao.getAllCardsList()
+
+    suspend fun findPersonByName(name: String): PersonEntity? = dao.findPersonByName(name)
+
+    suspend fun deleteCardsByIds(cardIds: List<Int>) = dao.deleteCardsByIds(cardIds)
+
+    suspend fun deletePersonsByIds(personIds: List<Int>) = dao.deletePersonsByIds(personIds)
 }

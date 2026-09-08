@@ -22,16 +22,29 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import com.example.ui.components.BackupRestoreDialog
+import com.example.ui.components.QrScannerDialog
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -81,6 +94,53 @@ fun HomeScreen(
     val totalCards by viewModel.totalCardCount.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val groupFilter by viewModel.groupFilter.collectAsState()
+    val selectedPersonIds by viewModel.selectedPersonIds.collectAsState()
+
+    var showBackupDialog by remember { mutableStateOf(false) }
+    var showQrScanner by remember { mutableStateOf(false) }
+    var showSettingsMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showBackupDialog) {
+        BackupRestoreDialog(
+            viewModel = viewModel,
+            onDismiss = { showBackupDialog = false }
+        )
+    }
+
+    if (showQrScanner) {
+        QrScannerDialog(
+            onDismiss = { showQrScanner = false },
+            onQrCodeScanned = { payload ->
+                viewModel.importQrPayload(payload) {}
+            },
+            onShowToast = { msg -> viewModel.copyToClipboard("", "", msg) }
+        )
+    }
+
+    if (showDeleteConfirm) {
+        val count = selectedPersonIds.size
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("تأیید حذف مخاطبین", fontWeight = FontWeight.Bold) },
+            text = { Text("آیا از حذف $count مخاطب انتخاب‌شده و تمام کارت‌های آن‌ها اطمینان دارید؟") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteSelectedPersons()
+                        showDeleteConfirm = false
+                    }
+                ) {
+                    Text("حذف شود")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("انصراف")
+                }
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButtonPosition = androidx.compose.material3.FabPosition.Start,
@@ -119,54 +179,141 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
                 Column {
-                    // Top Bar: Settings (Right), Centered Title, Theme Toggle (Left)
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Right Side (CenterStart in RTL): Settings Button
-                        IconButton(
-                            onClick = { /* Settings action for future */ },
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .testTag("settings_button")
+                    // Top Bar: Settings / Contextual Multi-Select
+                    if (selectedPersonIds.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "تنظیمات",
-                                tint = Color.White
-                            )
-                        }
+                            // Right Side: Close Selection
+                            IconButton(
+                                onClick = { viewModel.clearPersonSelection() },
+                                modifier = Modifier.align(Alignment.CenterStart)
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "لغو انتخاب", tint = Color.White)
+                            }
 
-                        // Center: Title & Brand Icon
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CreditCard,
-                                contentDescription = null,
-                                tint = Color(0xFF9DC6FF),
-                                modifier = Modifier.size(28.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            // Center: Selected Count
                             Text(
-                                text = "کارت‌یار",
+                                text = "${selectedPersonIds.size} مخاطب انتخاب شد",
                                 color = Color.White,
-                                fontSize = 24.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                        }
 
-                        // Left Side (CenterEnd in RTL): Theme Toggle Button
-                        IconButton(
-                            onClick = { viewModel.toggleDarkMode() },
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .testTag("dark_mode_toggle")
+                            // Left Side: Select All & Delete
+                            Row(modifier = Modifier.align(Alignment.CenterEnd)) {
+                                IconButton(
+                                    onClick = {
+                                        if (selectedPersonIds.size == personsWithCards.size) {
+                                            viewModel.clearPersonSelection()
+                                        } else {
+                                            viewModel.selectAllPersons(personsWithCards.map { it.person.id })
+                                        }
+                                    }
+                                ) {
+                                    Icon(Icons.Default.SelectAll, contentDescription = "انتخاب همه", tint = Color.White)
+                                }
+                                IconButton(
+                                    onClick = { showDeleteConfirm = true }
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "حذف انتخاب‌شده‌ها", tint = Color(0xFFEF4444))
+                                }
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                contentDescription = "تغییر حالت شب و روز",
-                                tint = Color.White
-                            )
+                            // Right Side (CenterStart in RTL): Settings Button with Menu
+                            Box(modifier = Modifier.align(Alignment.CenterStart)) {
+                                IconButton(
+                                    onClick = { showSettingsMenu = true },
+                                    modifier = Modifier.testTag("settings_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Settings,
+                                        contentDescription = "تنظیمات",
+                                        tint = Color.White
+                                    )
+                                }
+
+                                DropdownMenu(
+                                    expanded = showSettingsMenu,
+                                    onDismissRequest = { showSettingsMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.SettingsBackupRestore, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("پشتیبان‌گیری و بازیابی")
+                                            }
+                                        },
+                                        onClick = {
+                                            showSettingsMenu = false
+                                            showBackupDialog = true
+                                        },
+                                        modifier = Modifier.testTag("menu_backup_restore")
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text("اسکن کد QR (دریافت کارت)")
+                                            }
+                                        },
+                                        onClick = {
+                                            showSettingsMenu = false
+                                            showQrScanner = true
+                                        },
+                                        modifier = Modifier.testTag("menu_qr_scan")
+                                    )
+                                }
+                            }
+
+                            // Center: Title & Brand Icon
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CreditCard,
+                                    contentDescription = null,
+                                    tint = Color(0xFF9DC6FF),
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "کارت‌یار",
+                                    color = Color.White,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            // Left Side (CenterEnd in RTL): QR Scan Button + Theme Toggle Button
+                            Row(modifier = Modifier.align(Alignment.CenterEnd)) {
+                                IconButton(
+                                    onClick = { showQrScanner = true },
+                                    modifier = Modifier.testTag("qr_scan_header_btn")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCodeScanner,
+                                        contentDescription = "اسکن QR",
+                                        tint = Color.White
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { viewModel.toggleDarkMode() },
+                                    modifier = Modifier.testTag("dark_mode_toggle")
+                                ) {
+                                    Icon(
+                                        imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                        contentDescription = "تغییر حالت شب و روز",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -392,10 +539,23 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(personsWithCards, key = { it.person.id }) { item ->
+                        val isSelected = selectedPersonIds.contains(item.person.id)
                         PersonRowItem(
                             item = item,
-                            onClick = { onOpenPersonCards(item.person.id) },
-                            onTogglePin = { viewModel.togglePersonPinned(item.person) }
+                            isSelected = isSelected,
+                            isSelectionMode = selectedPersonIds.isNotEmpty(),
+                            onClick = {
+                                if (selectedPersonIds.isNotEmpty()) {
+                                    viewModel.togglePersonSelection(item.person.id)
+                                } else {
+                                    onOpenPersonCards(item.person.id)
+                                }
+                            },
+                            onLongClick = {
+                                viewModel.togglePersonSelection(item.person.id)
+                            },
+                            onTogglePin = { viewModel.togglePersonPinned(item.person) },
+                            onToggleSelect = { viewModel.togglePersonSelection(item.person.id) }
                         )
                     }
                     item {
@@ -407,19 +567,31 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PersonRowItem(
     item: PersonWithCards,
+    isSelected: Boolean = false,
+    isSelectionMode: Boolean = false,
     onClick: () -> Unit,
-    onTogglePin: () -> Unit
+    onLongClick: () -> Unit = {},
+    onTogglePin: () -> Unit,
+    onToggleSelect: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .testTag("person_row_${item.person.id}"),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            else MaterialTheme.colorScheme.surface
+        ),
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -429,11 +601,20 @@ fun PersonRowItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Right Section (Child 0 in RTL): Avatar, Name & Card Count
+            // Right Section (Child 0 in RTL): Selection Checkbox/Avatar, Name & Card Count
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f, fill = false)
             ) {
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onToggleSelect() },
+                        modifier = Modifier.testTag("person_checkbox_${item.person.id}")
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
                 AvatarView(kind = item.person.kind, size = 48.dp)
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(horizontalAlignment = Alignment.Start) {

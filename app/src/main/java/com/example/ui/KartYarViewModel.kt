@@ -7,14 +7,22 @@ import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
+import com.example.data.BackupHelper
+import com.example.data.BackupParseResult
+import com.example.data.BackupPayload
 import com.example.data.BankCardEntity
-import com.example.data.IranianBankHelper
-import com.example.data.KartYarRepository
 import com.example.data.CardGroupFilter
+import com.example.data.IranianBankHelper
 import com.example.data.KartFilterAndSortHelper
+import com.example.data.KartYarRepository
 import com.example.data.PersonEntity
 import com.example.data.PersonSortOption
 import com.example.data.PersonWithCards
+import com.example.data.QrImportResult
+import com.example.data.QrParseResult
+import com.example.data.QrPayload
+import com.example.data.QrTransferHelper
+import com.example.data.RestoreResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +41,8 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
     val searchQuery = MutableStateFlow("")
     val isDarkMode = MutableStateFlow(false)
     val selectedPersonId = MutableStateFlow<Int?>(null)
+    val selectedPersonIds = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedCardIds = MutableStateFlow<Set<Int>>(emptySet())
     val sortOption = MutableStateFlow(PersonSortOption.PINNED_FIRST)
     val groupFilter = MutableStateFlow(CardGroupFilter.ALL)
 
@@ -368,6 +378,139 @@ class KartYarViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deletePerson(person)
             showToast("مخاطب حذف شد")
+        }
+    }
+
+    // Multi-Selection Methods
+    fun togglePersonSelection(personId: Int) {
+        val current = selectedPersonIds.value
+        selectedPersonIds.value = if (current.contains(personId)) current - personId else current + personId
+    }
+
+    fun toggleCardSelection(cardId: Int) {
+        val current = selectedCardIds.value
+        selectedCardIds.value = if (current.contains(cardId)) current - cardId else current + cardId
+    }
+
+    fun selectAllPersons(ids: List<Int>) {
+        selectedPersonIds.value = ids.toSet()
+    }
+
+    fun selectAllCards(ids: List<Int>) {
+        selectedCardIds.value = ids.toSet()
+    }
+
+    fun clearPersonSelection() {
+        selectedPersonIds.value = emptySet()
+    }
+
+    fun clearCardSelection() {
+        selectedCardIds.value = emptySet()
+    }
+
+    fun deleteSelectedPersons(onSuccess: (() -> Unit)? = null) {
+        val ids = selectedPersonIds.value.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            val count = ids.size
+            repository.deletePersonsByIds(ids)
+            selectedPersonIds.value = emptySet()
+            showToast("$count مخاطب حذف شد")
+            onSuccess?.invoke()
+        }
+    }
+
+    fun deleteSelectedCards(onSuccess: (() -> Unit)? = null) {
+        val ids = selectedCardIds.value.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            val count = ids.size
+            repository.deleteCardsByIds(ids)
+            selectedCardIds.value = emptySet()
+            showToast("$count کارت حذف شد")
+            onSuccess?.invoke()
+        }
+    }
+
+    // Export Backup to Uri
+    fun exportBackupToUri(
+        context: Context,
+        uri: android.net.Uri,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val list = personsWithCards.value
+                val jsonStr = BackupHelper.exportBackupJson(list)
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    output.write(jsonStr.toByteArray(Charsets.UTF_8))
+                }
+                onResult(true, "پشتیبان‌گیری با موفقیت ذخیره شد")
+            } catch (e: Exception) {
+                onResult(false, "خطا در ذخیره فایل پشتیبان: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    // Parse Backup from Uri
+    fun parseBackupFromUri(
+        context: Context,
+        uri: android.net.Uri,
+        onResult: (BackupParseResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val jsonStr = context.contentResolver.openInputStream(uri)?.use { input ->
+                    input.bufferedReader(Charsets.UTF_8).readText()
+                } ?: ""
+                val res = BackupHelper.parseBackupJson(jsonStr)
+                onResult(res)
+            } catch (e: Exception) {
+                onResult(BackupParseResult.Error("خطا در خواندن فایل پشتیبان"))
+            }
+        }
+    }
+
+    // Restore Backup Payload
+    fun restoreBackupPayload(
+        payload: BackupPayload,
+        onResult: (RestoreResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            val res = BackupHelper.restoreBackup(repository, payload)
+            var msg = "بازیابی پشتیبان انجام شد: ${res.addedPersons} مخاطب و ${res.addedCards} کارت اضافه شد"
+            if (res.duplicateCards > 0) {
+                msg += "، ${res.duplicateCards} کارت تکراری بود"
+            }
+            showToast(msg)
+            onResult(res)
+        }
+    }
+
+    // QR Code Methods
+    fun parseQrString(qrString: String): QrParseResult {
+        return QrTransferHelper.parseQrString(qrString)
+    }
+
+    fun importQrPayload(
+        payload: QrPayload,
+        onResult: (QrImportResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            val res = QrTransferHelper.importQrPayload(repository, payload)
+            if (res.addedCards == 0 && res.duplicateCards > 0) {
+                showToast("اطلاعات جدیدی برای افزودن وجود ندارد")
+            } else {
+                var msg = "${res.addedCards} کارت اضافه شد"
+                if (res.duplicateCards > 0) {
+                    msg += "، ${res.duplicateCards} کارت تکراری بود"
+                }
+                if (res.rejectedCards > 0) {
+                    msg += "، ${res.rejectedCards} کارت نامعتبر بود"
+                }
+                showToast(msg)
+            }
+            onResult(res)
         }
     }
 
